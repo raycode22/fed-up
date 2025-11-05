@@ -87,5 +87,4 @@ After completing tasks, it returns to the main menu so you can select more.
 - [Fedora Documentation](https://docs.fedoraproject.org/en-US/docs/)
 - [Fedora Wiki](https://fedoraproject.org/wiki/Main_Page)
 - [DNF](https://dnf.readthedocs.io/en/latest/)
-- [Fedora_Project_Wiki](https://fedoraproject.org/wiki/Fedora_Project_Wiki)
 - [Debugpoint](https://www.debugpoint.com/10-things-to-do-fedora-43-after-install/)
