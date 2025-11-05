@@ -1,7 +1,8 @@
 # Fed-up (Fedora Post-Installation Setup Script)
 
-A Python-based terminal program that helps automate common setup and configuration tasks after installing **Fedora Workstation(Gnome)**
-It allows you to choose what to install, update, or configure, and includes smart checks to skip tasks already done.
+A Python-based terminal program that helps automate common setup and configuration tasks after installing
+**Fedora Workstation(Gnome)**.It allows you to choose what to install, update, or configure, and includes
+smart checks to skip tasks already done.
 
 ---
 
@@ -44,6 +45,8 @@ It allows you to choose what to install, update, or configure, and includes smar
 
    ```bash
    sudo ./fedora_setup_tool.py
+                or
+   sudo python3 fedora_setup_tool.py
    ```
 
 ## Usage
