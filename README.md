@@ -1,6 +1,6 @@
 # Fed-up (Fedora Post-Installation Setup Script)
 
-A Python-based terminal program that helps automate common setup and configuration tasks after installing **Fedora Workstation (Gnome)**
+A Python-based terminal program that helps automate common setup and configuration tasks after installing **Fedora Workstation s(Gnome)**
 It allows you to choose what to install, update, or configure, and includes smart checks to skip tasks already done.
 
 ---
@@ -73,10 +73,16 @@ After completing tasks, it returns to the main menu so you can select more.
 
 ## Notes
 
-- Always run as **root** (use `sudo`)
+- Always run as **root** (use `sudo`) **you can check the codebase if you are doubtful**
 - The script modifies system files like `/etc/dnf/dnf.conf` when needed
 - You can safely rerun it anytime to ensure your Fedora setup stays consistent
 
-```
+## Reference/s
 
-```
+[When in doubt, check official docs and community forums]
+
+- [Fedora Documentation](https://docs.fedoraproject.org/en-US/docs/)
+- [Fedora Wiki](https://fedoraproject.org/wiki/Main_Page)
+- [DNF](https://dnf.readthedocs.io/en/latest/)
+- [Fedora_Project_Wiki](https://fedoraproject.org/wiki/Fedora_Project_Wiki)
+- [Debugpoint](https://www.debugpoint.com/10-things-to-do-fedora-43-after-install/)
