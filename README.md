@@ -34,13 +34,13 @@ It allows you to choose what to install, update, or configure, and includes smar
    cd fed-up
    ```
 
-2. Clone or download this repository:
+2. Make the script executable:
 
    ```bash
    chmod +x fedora_setup_tool.py
    ```
 
-3. Clone or download this repository:
+3. Run the script with root privileges:
 
    ```bash
    sudo ./fedora_setup_tool.py
