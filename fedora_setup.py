@@ -1,27 +1,12 @@
-#!/usr/bin/env python3
-
-"""
-Fedora 43 Post-Installation Setup Script
-
-This script provides an interactive, terminal-based menu to automate
-common post-installation tasks. It checks for existing installations
-and configurations to avoid redundant work.
-
-Usage:
-  1. Make the script executable:
-     chmod +x fedora_setup_tool.py
-  2. Run the script with root privileges:
-     sudo ./fedora_setup_tool.py
-"""
-
 import sys
 import os
 import subprocess
 import time
 import threading
+from typing import Any, Literal, Optional
 
 
-# --- ANSI Color Codes for a Modern Look ---
+# --- ANSI Color Codes  ---
 class C:
     HEADER = "\033[95m"
     BLUE = "\033[94m"
@@ -37,7 +22,7 @@ class C:
 # --- Task Definitions ---
 # Based on https://www.debugpoint.com/10-things-to-do-fedora-43-after-install/
 # and other common user tasks.
-TASKS = {
+TASKS: dict[str, list[dict[str, Any]]] = {
     "1. Essentials (Must-Do)": [
         {
             "id": "1",
@@ -48,7 +33,7 @@ TASKS = {
         {
             "id": "2",
             "desc": "Enable RPM Fusion Repos (Free & Non-Free)",
-            "type": "shell",  # Use shell for the URL, check logic is trickier
+            "type": "shell",
             "commands": [
                 [
                     "dnf",
@@ -209,27 +194,17 @@ TASKS = {
                 ["systemctl", "enable", "--now", "tlp"],
             ],
         },
-        {
-            "id": "15",
-            "desc": "Install Preload (Faster App Launching)",
-            "type": "dnf",
-            "packages": ["preload"],
-            "commands": [
-                ["dnf", "install", "-y", "preload"],
-                ["systemctl", "enable", "--now", "preload"],
-            ],
-        },
     ],
     "5. Developer Setup": [
         {
-            "id": "16",
+            "id": "15",
             "desc": "Install 'Development Tools' Group (gcc, make, etc.)",
             "type": "group",
             "group_name": "Development Tools",
             "commands": [["dnf", "groupinstall", "-y", "Development Tools"]],
         },
         {
-            "id": "17",
+            "id": "16",
             "desc": "Install Visual Studio Code (Microsoft Repo)",
             "type": "dnf",
             "packages": ["code"],
@@ -256,12 +231,12 @@ spinner_running = False
 spinner_stop_event = threading.Event()
 
 
-def clear_screen():
+def clear_screen() -> None:
     """Clears the terminal screen."""
     os.system("clear")
 
 
-def check_root():
+def check_root() -> None:
     """Checks if the script is run as root. Exits if not."""
     if os.geteuid() != 0:
         print(f"{C.FAIL}{C.BOLD}Error:{C.ENDC} This script must be run as root.")
@@ -269,7 +244,7 @@ def check_root():
         sys.exit(1)
 
 
-def show_spinner(message=""):
+def show_spinner(message: str = "") -> None:
     """Displays a brick-style spinner animation in a separate thread."""
     global spinner_running
     spinner_running = True
@@ -291,18 +266,19 @@ def show_spinner(message=""):
     spinner_stop_event.clear()
 
 
-def run_command(command, use_shell=False):
+def run_command(command: list[str], use_shell: bool = False) -> tuple[bool, str, str]:
     """
     Runs a shell command, capturing stdout and stderr.
     Returns (success, stdout, stderr)
     """
     try:
         # Use shell=True only when needed (e.g., for rpm -E)
-        if "rpm -E" in " ".join(command) or ">" in " ".join(command):
+        cmd_str = " ".join(command)
+        if "rpm -E" in cmd_str or ">" in cmd_str:
             use_shell = True
 
         process = subprocess.run(
-            " ".join(command) if use_shell else command,
+            cmd_str if use_shell else command,
             shell=use_shell,
             check=True,
             capture_output=True,
@@ -311,18 +287,18 @@ def run_command(command, use_shell=False):
         )
         return (True, process.stdout, process.stderr)
     except subprocess.CalledProcessError as e:
-        return (False, e.stdout, e.stderr)
+        return (False, e.stdout if e.stdout else "", e.stderr if e.stderr else "")
     except FileNotFoundError as e:
         return (False, "", f"Command not found: {e.filename}")
 
 
-def check_package_installed(pkg_name):
+def check_package_installed(pkg_name: str) -> bool:
     """Checks if a single RPM package is installed."""
     success, _, _ = run_command(["rpm", "-q", pkg_name])
     return success
 
 
-def check_flatpak_installed(pkg_name):
+def check_flatpak_installed(pkg_name: str) -> bool:
     """Checks if a single Flatpak package is installed."""
     success, stdout, _ = run_command(
         ["flatpak", "list", "--app", "--columns=application"]
@@ -334,7 +310,7 @@ def check_flatpak_installed(pkg_name):
     return False
 
 
-def check_group_installed(group_name):
+def check_group_installed(group_name: str) -> bool:
     """Checks if a DNF group is already installed."""
     success, stdout, _ = run_command(["dnf", "group", "info", group_name])
     if success:
@@ -344,7 +320,7 @@ def check_group_installed(group_name):
     return False
 
 
-def check_config_applied(config_file, config_line):
+def check_config_applied(config_file: str, config_line: str) -> bool:
     """Checks if a specific line already exists in a config file."""
     if not os.path.exists(config_file):
         return False
@@ -359,7 +335,7 @@ def check_config_applied(config_file, config_line):
     return False
 
 
-def apply_config(config_file, config_line):
+def apply_config(config_file: str, config_line: str) -> tuple[bool, str, str]:
     """Appends a line to a config file."""
     try:
         with open(config_file, "a") as f:
@@ -369,7 +345,126 @@ def apply_config(config_file, config_line):
         return (False, "", f"Could not write to {config_file}: {e}")
 
 
-def run_task(task):
+def parse_dnf_updates(output: str) -> list[tuple[str, str, str, str]]:
+    """
+    Parses DNF check-update output and returns a list of (package, current, new, repo) tuples.
+    """
+    updates: list[tuple[str, str, str, str]] = []
+    lines = output.strip().split("\n")
+
+    for line in lines:
+        line = line.strip()
+        if not line or line.startswith("Last metadata") or line.startswith("Security"):
+            continue
+
+        parts = line.split()
+        if len(parts) >= 3:
+            package = parts[0]
+            new_version = parts[1]
+            repo = parts[2]
+
+            # Extract current version if available
+            if "." in package:
+                pkg_parts = package.rsplit(".", 1)
+                pkg_name = pkg_parts[0]
+                arch = pkg_parts[1] if len(pkg_parts) > 1 else ""
+            else:
+                pkg_name = package
+                arch = ""
+
+            # Get current version
+            success, stdout, _ = run_command(
+                ["rpm", "-q", "--queryformat", "%{VERSION}-%{RELEASE}", pkg_name]
+            )
+            current_version = stdout.strip() if success else "N/A"
+
+            updates.append((package, current_version, new_version, repo))
+
+    return updates
+
+
+def display_updates_table(updates: list[tuple[str, str, str, str]]) -> None:
+    """
+    Displays available updates in a modern tabular format.
+    """
+    if not updates:
+        print(f"\n{C.GREEN}✔ System is up to date! No packages to upgrade.{C.ENDC}")
+        return
+
+    print(f"\n{C.HEADER}{C.BOLD}{'=' * 100}{C.ENDC}")
+    print(f"{C.HEADER}{C.BOLD}Available Updates ({len(updates)} packages){C.ENDC}")
+    print(f"{C.HEADER}{C.BOLD}{'=' * 100}{C.ENDC}\n")
+
+    # Table headers
+    header = f"{C.BOLD}{C.CYAN}{'Package':<40} {'Current':<20} {'New':<20} {'Repository':<15}{C.ENDC}"
+    print(header)
+    print(f"{C.CYAN}{'-' * 100}{C.ENDC}")
+
+    # Display updates with alternating colors for readability
+    for i, (package, current, new, repo) in enumerate(updates):
+        color = C.GREEN if i % 2 == 0 else C.WARNING
+
+        # Truncate long package names
+        pkg_display = package[:38] + ".." if len(package) > 40 else package
+        current_display = current[:18] + ".." if len(current) > 20 else current
+        new_display = new[:18] + ".." if len(new) > 20 else new
+        repo_display = repo[:13] + ".." if len(repo) > 15 else repo
+
+        print(
+            f"{color}{pkg_display:<40} {current_display:<20} {new_display:<20} {repo_display:<15}{C.ENDC}"
+        )
+
+    print(f"{C.CYAN}{'-' * 100}{C.ENDC}\n")
+
+
+def check_and_confirm_updates() -> bool:
+    """
+    Checks for available updates and asks user for confirmation.
+    Returns True if user wants to proceed, False otherwise.
+    """
+    print(f"\n{C.CYAN}Checking for available updates...{C.ENDC}")
+
+    # Run dnf check-update
+    success, stdout, stderr = run_command(["dnf", "check-update", "--refresh"])
+
+    # dnf check-update returns 100 when updates are available
+    # Parse the output regardless of return code
+    updates = parse_dnf_updates(stdout)
+
+    display_updates_table(updates)
+
+    if not updates:
+        print(f"{C.CYAN}Press Enter to return to the main menu...{C.ENDC}")
+        input()
+        return False
+
+    # Calculate approximate download size
+    print(
+        f"{C.WARNING}⚠ This will download and install {len(updates)} package(s).{C.ENDC}"
+    )
+    print(f"{C.WARNING}⚠ The system may require a reboot after the update.{C.ENDC}\n")
+
+    # Ask for confirmation
+    while True:
+        response = (
+            input(
+                f"{C.GREEN}Do you want to proceed with the update? (yes/no): {C.ENDC}"
+            )
+            .strip()
+            .lower()
+        )
+
+        if response in ["yes", "y"]:
+            return True
+        elif response in ["no", "n"]:
+            print(f"\n{C.WARNING}Update cancelled. Returning to main menu...{C.ENDC}")
+            time.sleep(1.5)
+            return False
+        else:
+            print(f"{C.FAIL}Please enter 'yes' or 'no'.{C.ENDC}")
+
+
+def run_task(task: dict[str, Any]) -> bool:
     """
     Runs a single task, checking its type and whether it's already done.
     Returns True on success/skip, False on failure.
@@ -378,32 +473,41 @@ def run_task(task):
     task_type = task.get("type", "shell")
     all_done = True
 
+    # Special handling for system update task (ID: 1)
+    if task.get("id") == "1":
+        if not check_and_confirm_updates():
+            return True  # Return True to indicate user chose to skip (not a failure)
+
     # --- Check if task is already completed ---
     if task_type == "dnf":
-        packages = task.get("packages", [])
+        packages: list[str] = task.get("packages", [])
         # Check if all packages in the list are installed
         all_done = all(check_package_installed(pkg) for pkg in packages)
         if not packages:
             all_done = False  # If no packages listed, just run
 
     elif task_type == "flatpak":
-        all_done = check_flatpak_installed(task["package_name"])
+        package_name: str = task.get("package_name", "")
+        all_done = check_flatpak_installed(package_name)
 
     elif task_type == "group":
-        all_done = check_group_installed(task["group_name"])
+        group_name: str = task.get("group_name", "")
+        all_done = check_group_installed(group_name)
 
     elif task_type == "config":
-        all_done = all(
-            check_config_applied(task["config_file"], line)
-            for line in task["config_lines"]
-        )
+        config_file: str = task.get("config_file", "")
+        config_lines: list[str] = task.get("config_lines", [])
+        all_done = all(check_config_applied(config_file, line) for line in config_lines)
 
     elif task_type == "check_file":
-        all_done = os.path.exists(task.get("check_path", ""))
+        check_path: str = task.get("check_path", "")
+        all_done = os.path.exists(check_path)
 
     elif task_type == "shell_grep":
-        success, stdout, _ = run_command(task["check_command"])
-        all_done = success and task["check_grep"] in stdout
+        check_command: list[str] = task.get("check_command", [])
+        check_grep: str = task.get("check_grep", "")
+        success, stdout, _ = run_command(check_command)
+        all_done = success and check_grep in stdout
 
     else:
         all_done = False  # Default to running shell tasks
@@ -420,17 +524,21 @@ def run_task(task):
     error_message = ""
 
     if task_type == "config":
-        for line in task["config_lines"]:
-            if not check_config_applied(task["config_file"], line):
-                success, _, stderr = apply_config(task["config_file"], line)
+        config_file = task.get("config_file", "")
+        config_lines = task.get("config_lines", [])
+        for line in config_lines:
+            if not check_config_applied(config_file, line):
+                success, _, stderr = apply_config(config_file, line)
                 if not success:
                     task_failed = True
                     error_message = stderr
                     break
     else:
-        for command in task["commands"]:
+        commands: list[list[str]] = task.get("commands", [])
+        for command in commands:
             # RPM Fusion URL needs shell=True to expand $(rpm -E %fedora)
-            use_shell = "rpm -E" in " ".join(command) or ">" in " ".join(command)
+            cmd_str = " ".join(command)
+            use_shell = "rpm -E" in cmd_str or ">" in cmd_str
             success, _, stderr = run_command(command, use_shell=use_shell)
             if not success:
                 task_failed = True
@@ -442,19 +550,21 @@ def run_task(task):
 
     if task_failed:
         print(f" {C.FAIL}✘ FAILED: {title}{C.ENDC}")
-        print(f"   {C.FAIL}Error: {error_message.splitlines()[-1]}{C.ENDC}")
+        error_lines = error_message.splitlines()
+        if error_lines:
+            print(f"   {C.FAIL}Error: {error_lines[-1]}{C.ENDC}")
         return False
     else:
         print(f" {C.GREEN}✔ SUCCESS: {title}{C.ENDC}")
         return True
 
 
-def display_menu():
+def display_menu() -> None:
     """Prints the main selection menu."""
     clear_screen()
-    print(f"{C.HEADER}{C.BOLD}========================================={C.ENDC}")
-    print(f"{C.HEADER}{C.BOLD} Fedora 43 Post-Installation Setup Tool {C.ENDC}")
-    print(f"{C.HEADER}{C.BOLD}========================================={C.ENDC}")
+    print(f"{C.HEADER}{C.BOLD}============================================={C.ENDC}")
+    print(f"{C.HEADER}{C.BOLD} Fed-up(Fedora Post-Installation Setup Tool) {C.ENDC}")
+    print(f"{C.HEADER}{C.BOLD}============================================={C.ENDC}")
     print(f"Select tasks to perform (e.g., 1,3,7 or 5-8).\n")
 
     for category, tasks in TASKS.items():
@@ -467,13 +577,13 @@ def display_menu():
     print(f"  {C.GREEN}[q]   {C.ENDC}Quit the script\n")
 
 
-def get_user_choices():
+def get_user_choices() -> list[str] | Literal["quit"] | None:
     """
     Gets and parses the user's task selections, supporting ranges.
-    Returns a list of task IDs to run.
+    Returns a list of task IDs to run, "quit", or None on error.
     """
     all_task_ids = {task["id"] for tasks in TASKS.values() for task in tasks}
-    selected_ids = set()
+    selected_ids: set[str] = set()
 
     choice_str = input(f"{C.GREEN}❯ {C.ENDC}").strip().lower()
 
@@ -484,7 +594,7 @@ def get_user_choices():
         return sorted(list(all_task_ids), key=int)
 
     parts = choice_str.split(",")
-    invalid_choices = []
+    invalid_choices: list[str] = []
 
     for part in parts:
         part = part.strip()
@@ -493,7 +603,8 @@ def get_user_choices():
         if "-" in part:
             # Handle range (e.g., 5-8)
             try:
-                start, end = map(int, part.split("-"))
+                range_parts = part.split("-")
+                start, end = int(range_parts[0]), int(range_parts[1])
                 if start > end:
                     start, end = end, start
                 for i in range(start, end + 1):
@@ -502,7 +613,7 @@ def get_user_choices():
                         selected_ids.add(task_id)
                     else:
                         invalid_choices.append(task_id)
-            except ValueError:
+            except (ValueError, IndexError):
                 invalid_choices.append(part)
         else:
             # Handle single number
@@ -519,7 +630,7 @@ def get_user_choices():
     return sorted(list(selected_ids), key=int)
 
 
-def main():
+def main() -> None:
     """Main execution loop."""
     check_root()
 
@@ -543,7 +654,7 @@ def main():
         time.sleep(1)  # Give user time to read
 
         tasks_succeeded = 0
-        tasks_failed = []
+        tasks_failed: list[str] = []
 
         for task_id in selected_ids:
             task = all_tasks_map[task_id]
