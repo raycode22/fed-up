@@ -1,0 +1,21 @@
+site:
+  name: Fedora Automation Tool
+  tagline: Build a custom Fedora workstation setup with one click.
+  description: Generate a personalized Fedora Linux setup script from a curated set of package, media, and system tweaks.
+  version: "1.0.0"
+  author: Ray Code
+  default_branch: main
+  target_fedora_versions: ["39", "40", "41"]
+  license: MIT
+  repo_url: https://github.com/yourusername/fedora-automation
+  homepage: https://yourusername.github.io/fedora-automation/
+
+ui:
+  title: Fedora Setup Generator
+  subtitle: Select the changes you want, then download a bash script.
+  script_name: fedora-setup.sh
+
+build:
+  output_json: web/data.json
+  validate_on_run: true
+  strict_mode: false
