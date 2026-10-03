@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fedora Setup Generator</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="container">
+        <div>
+          <p class="eyebrow">Fedora Automation Tool</p>
+          <h1>Build your Fedora workstation</h1>
+        </div>
+        <button id="select-all" class="secondary-btn" type="button">Select all</button>
+      </div>
+    </header>
+
+    <main class="container layout">
+      <section class="panel left-panel">
+        <div class="panel-header">
+          <h2>Available setup items</h2>
+          <span id="item-count" class="count-pill">0 selected</span>
+        </div>
+        <div id="category-list" class="category-list"></div>
+      </section>
+
+      <aside class="panel right-panel">
+        <div class="panel-header">
+          <h2>Generated script</h2>
+          <div class="button-row">
+            <button id="copy-script" class="secondary-btn" type="button">Copy</button>
+            <button id="download-script" class="primary-btn" type="button">Download .sh</button>
+          </div>
+        </div>
+        <pre id="script-preview" class="script-preview"></pre>
+      </aside>
+    </main>
+
+    <template id="category-template">
+      <section class="category-block">
+        <div class="category-header">
+          <h3></h3>
+          <button type="button" class="inline-toggle">Toggle all</button>
+        </div>
+        <div class="item-list"></div>
+      </section>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
