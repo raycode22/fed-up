@@ -18,13 +18,22 @@
     <header class="site-header">
       <div class="container header-content">
         <a class="brand" href="#top" aria-label="Fed-up home">Fed-up</a>
-        <details class="site-navigation" open>
-          <summary>Navigation</summary>
+        <details class="site-navigation mobile-navigation">
+          <summary>
+            <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+            <span>Menu</span>
+          </summary>
           <nav aria-label="Main navigation">
             <a href="#setup">Setup options</a>
             <a href="#script">Generated script</a>
           </nav>
         </details>
+        <nav class="desktop-navigation" aria-label="Main navigation">
+          <a href="#setup">Setup options</a>
+          <a href="#script">Generated script</a>
+        </nav>
       </div>
       <div class="container intro" id="top">
         <p class="eyebrow">Make Fedora yours</p>
@@ -34,6 +43,20 @@
           Choose the tools and settings you need, then download a setup script to run on your
           Fedora workstation.
         </p>
+        <aside class="caution-banner" aria-labelledby="caution-heading">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M12 3 22 21H2L12 3Z" />
+            <path d="M12 9v5m0 3h.01" />
+          </svg>
+          <div>
+            <h2 id="caution-heading">Before you run a script</h2>
+            <p>
+              Fed-up only builds and downloads scripts; it does not run them. Read the generated
+              commands before running anything with <code>sudo</code>. Cleanup and revert scripts
+              can change installed packages, so review DNF's proposed changes and cancel if unsure.
+            </p>
+          </div>
+        </aside>
       </div>
     </header>
 
@@ -72,9 +95,9 @@
           <p class="maintenance-note">
             Cleanup runs <code>dnf clean all</code> and offers DNF's interactive
             <code>autoremove</code> proposal for your review; DNF may include dependencies
-            unrelated to Fed-up, so cancel if unsure. Revert only targets tracked RPM packages;
-            Earlier setup scripts did not create a revert manifest. Revert leaves repositories,
-            system settings, Flatpaks, and user data unchanged.
+            unrelated to Fed-up, so cancel if unsure. Revert targets RPM packages tracked by
+            current Fed-up setup scripts; earlier scripts did not create a revert manifest.
+            Revert leaves repositories, system settings, Flatpaks, and user data unchanged.
           </p>
         </section>
       </section>
@@ -97,6 +120,54 @@
         <p id="copy-status" class="visually-hidden" role="status" aria-live="polite"></p>
         <pre id="script-preview" class="script-preview" aria-label="Generated shell script"></pre>
       </article>
+
+      <section class="fedora-invite" aria-labelledby="fedora-invite-heading">
+        <div class="fedora-invite-heading">
+          <p class="eyebrow">New to Fedora?</p>
+          <h2 id="fedora-invite-heading">Choose a Fedora desktop</h2>
+          <p>Try Fedora itself, then use Fed-up to tailor your system.</p>
+        </div>
+        <div class="fedora-cards">
+          <article class="fedora-card">
+            <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+              <rect x="5" y="7" width="38" height="27" rx="3" />
+              <path d="M18 41h12m-6-7v7M12 28h24" />
+            </svg>
+            <h3>Fedora Workstation</h3>
+            <p>A polished, dependable desktop for getting to work, creating, and exploring.</p>
+            <a href="https://fedoraproject.org/workstation/" target="_blank" rel="noopener noreferrer">
+              Explore Workstation <span aria-hidden="true">→</span>
+            </a>
+          </article>
+          <article class="fedora-card">
+            <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+              <rect x="5" y="7" width="38" height="27" rx="3" />
+              <path d="M18 41h12m-6-7v7M12 28h24M15 15h18" />
+              <circle cx="17" cy="21" r="1" />
+              <circle cx="24" cy="21" r="1" />
+              <circle cx="31" cy="21" r="1" />
+            </svg>
+            <h3>Fedora KDE Plasma Desktop</h3>
+            <p>A flexible, feature-rich desktop with the familiar feel and power of KDE Plasma.</p>
+            <a href="https://fedoraproject.org/kde/" target="_blank" rel="noopener noreferrer">
+              Explore Fedora KDE <span aria-hidden="true">→</span>
+            </a>
+          </article>
+        </div>
+        <aside class="spins-alternative">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="m12 3 9 5-9 5-9-5 9-5Z" />
+            <path d="m3 12 9 5 9-5M3 16l9 5 9-5" />
+          </svg>
+          <p>
+            <strong>Looking for something different?</strong>
+            Fedora Spins offers more desktop environments and editions to explore.
+            <a href="https://fedoraproject.org/spins" target="_blank" rel="noopener noreferrer">
+              Find your Fedora Spin <span aria-hidden="true">→</span>
+            </a>
+          </p>
+        </aside>
+      </section>
     </main>
 
     <footer class="site-footer">
@@ -108,6 +179,7 @@
     <template id="category-template">
       <details class="category-block">
         <summary class="category-header">
+          <span class="category-icon" aria-hidden="true"></span>
           <h3></h3>
           <span class="category-hint">Show setup items</span>
         </summary>
