@@ -13,6 +13,9 @@
   --muted: #606678;
   --focus: #a34800;
   --code-bg: #202331;
+  --caution-bg: #fff2d8;
+  --caution-border: #b45b00;
+  --caution-text: #603000;
   --shadow: 0 0.75rem 2rem rgb(45 49 66 / 7%);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
@@ -35,6 +38,9 @@
     --muted: #b7bbca;
     --focus: #ffd18a;
     --code-bg: #10131b;
+    --caution-bg: #382b1a;
+    --caution-border: #ffc46b;
+    --caution-text: #ffe4b5;
     --shadow: 0 0.75rem 2rem rgb(0 0 0 / 18%);
   }
 }
@@ -155,6 +161,9 @@ h3 {
 }
 
 .site-navigation summary {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
   padding: 0.4rem 0.65rem;
   border: 1px solid rgb(255 255 255 / 40%);
   border-radius: 0.5rem;
@@ -162,13 +171,18 @@ h3 {
   list-style: none;
 }
 
-.site-navigation summary::-webkit-details-marker {
+.site-navigation summary::-webkit-details-marker,
+.site-navigation summary::marker {
   display: none;
 }
 
-.site-navigation summary::after {
-  content: "v";
-  margin-inline-start: 0.5rem;
+.menu-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 2;
 }
 
 .site-navigation nav {
@@ -186,6 +200,10 @@ h3 {
   box-shadow: var(--shadow);
 }
 
+.mobile-navigation:not([open]) > nav {
+  display: none;
+}
+
 .site-navigation nav a {
   padding: 0.5rem 0.75rem;
   border-radius: 0.4rem;
@@ -195,6 +213,10 @@ h3 {
 
 .site-navigation nav a:hover {
   background: var(--surface-muted);
+}
+
+.desktop-navigation {
+  display: none;
 }
 
 .intro {
@@ -228,6 +250,48 @@ h3 {
   max-width: 42rem;
   margin-block: 1rem 0;
   color: #e2e5f0;
+}
+
+.caution-banner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.85rem;
+  max-width: 54rem;
+  margin-block-start: clamp(1.5rem, 4vw, 2.5rem);
+  padding: clamp(1rem, 2.5vw, 1.4rem);
+  border: 1px solid var(--caution-border);
+  border-inline-start-width: 0.35rem;
+  border-radius: 0.8rem;
+  background: var(--caution-bg);
+  color: var(--caution-text);
+}
+
+.caution-banner > svg {
+  width: 1.6rem;
+  height: 1.6rem;
+  margin-block-start: 0.1rem;
+  fill: none;
+  stroke: var(--caution-border);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.caution-banner h2 {
+  margin-block-end: 0.35rem;
+  color: var(--caution-text);
+  font-size: 1.05rem;
+}
+
+.caution-banner p {
+  margin-block-end: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.caution-banner code {
+  font-weight: 800;
 }
 
 .page-content {
@@ -339,6 +403,28 @@ h3 {
   padding: 0.9rem 1rem;
   cursor: pointer;
   list-style: none;
+}
+
+.category-icon {
+  display: grid;
+  flex: 0 0 2.25rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: var(--surface-muted);
+  color: var(--accent-strong);
+}
+
+.category-symbol {
+  width: 1.35rem;
+  height: 1.35rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
 }
 
 .category-header::-webkit-details-marker {
@@ -503,6 +589,101 @@ h3 {
   margin-block: -0.5rem 0.85rem;
 }
 
+.fedora-invite {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 1.25rem;
+  padding-block: clamp(0.5rem, 2vw, 1rem);
+}
+
+.fedora-invite-heading {
+  max-width: 42rem;
+}
+
+.fedora-invite-heading h2 {
+  margin-block-end: 0.4rem;
+}
+
+.fedora-invite-heading > p:last-child {
+  margin-block-end: 0;
+  color: var(--muted);
+}
+
+.fedora-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: 1rem;
+}
+
+.fedora-card {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 0.65rem;
+  padding: clamp(1rem, 2vw, 1.4rem);
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.fedora-card > svg {
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-block-end: 0.25rem;
+  fill: none;
+  stroke: var(--accent-strong);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.fedora-card h3,
+.fedora-card p {
+  margin-block-end: 0;
+}
+
+.fedora-card p {
+  color: var(--muted);
+}
+
+.fedora-card a,
+.spins-alternative a {
+  font-weight: 750;
+}
+
+.spins-alternative {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.8rem;
+  padding: 1rem 1.2rem;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  background: var(--surface-muted);
+}
+
+.spins-alternative > svg {
+  width: 1.6rem;
+  height: 1.6rem;
+  fill: none;
+  stroke: var(--accent-strong);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.spins-alternative p {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0;
+  color: var(--muted);
+}
+
+.spins-alternative strong {
+  color: var(--text);
+}
+
 .site-footer {
   padding-block: 1.5rem;
   border-block-start: 1px solid var(--border);
@@ -526,28 +707,24 @@ h3 {
 }
 
 @media (min-width: 48rem) {
-  .site-navigation summary {
+  .mobile-navigation {
     display: none;
   }
 
-  .site-navigation nav,
-  .site-navigation:not([open]) nav {
-    position: static;
+  .desktop-navigation {
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    min-width: 0;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    box-shadow: none;
   }
 
-  .site-navigation nav a {
+  .desktop-navigation a {
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.4rem;
     color: #ffffff;
+    text-decoration: none;
   }
 
-  .site-navigation nav a:hover {
+  .desktop-navigation a:hover {
     background: rgb(255 255 255 / 12%);
   }
 }
