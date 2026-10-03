@@ -7,92 +7,65 @@ const categoryList = document.getElementById('category-list');
 const itemCount = document.getElementById('item-count');
 const scriptPreview = document.getElementById('script-preview');
 const selectAllButton = document.getElementById('select-all');
+const copyButton = document.getElementById('copy-script');
+const copyStatus = document.getElementById('copy-status');
 
 async function loadData() {
   const response = await fetch('./data.json');
   if (!response.ok) {
-    throw new Error('Could not load generated config. Run `python build/build.py` first.');
+    throw new Error('Could not load setup options. Please try again later.');
   }
 
   const payload = await response.json();
-  state.categories = payload.categories || [];
+  if (!Array.isArray(payload.categories)) {
+    throw new Error('The setup options are not in the expected format.');
+  }
+
+  state.categories = payload.categories;
+  state.selected = new Set(
+    state.categories.flatMap((category) => category.items.map((item) => item.id)),
+  );
   renderCategories();
-  selectAll();
 }
 
 function renderCategories() {
-  categoryList.innerHTML = '';
+  const categoryTemplate = document.getElementById('category-template');
+  const itemTemplate = document.getElementById('item-template');
+  const fragment = document.createDocumentFragment();
 
   for (const category of state.categories) {
-    const template = document.getElementById('category-template');
-    const clone = template.content.firstElementChild.cloneNode(true);
-    const heading = clone.querySelector('h3');
-    heading.textContent = category.label;
+    const categoryElement = categoryTemplate.content.firstElementChild.cloneNode(true);
+    categoryElement.dataset.category = category.category;
+    categoryElement.querySelector('h3').textContent = category.label;
+    categoryElement.querySelector('.category-item-count').textContent =
+      `${category.items.length} items`;
 
-    const itemList = clone.querySelector('.item-list');
+    const itemList = categoryElement.querySelector('.item-list');
     for (const item of category.items) {
-      const row = document.createElement('label');
-      row.className = 'item-row';
-      row.innerHTML = `
-        <input type="checkbox" data-id="${item.id}" ${state.selected.has(item.id) ? 'checked' : ''} />
-        <div class="item-text">
-          <span class="item-title">${item.label}</span>
-          <span class="item-desc">${item.description}</span>
-        </div>
-        <span class="tag">${item.impact}</span>
-      `;
-
-      row.addEventListener('change', (event) => {
-        const checkbox = event.target;
-        if (checkbox.checked) {
-          state.selected.add(item.id);
-        } else {
-          state.selected.delete(item.id);
-        }
-        updateScript();
-        updateCount();
-      });
-
-      itemList.appendChild(row);
+      const itemElement = itemTemplate.content.firstElementChild.cloneNode(true);
+      const checkbox = itemElement.querySelector('input');
+      checkbox.dataset.id = item.id;
+      checkbox.checked = state.selected.has(item.id);
+      itemElement.querySelector('.item-title').textContent = item.label;
+      itemElement.querySelector('.item-desc').textContent = item.description;
+      itemElement.querySelector('.tag').textContent = item.impact;
+      itemList.appendChild(itemElement);
     }
 
-    const toggleButton = clone.querySelector('.inline-toggle');
-    toggleButton.addEventListener('click', () => {
-      const itemCheckboxes = Array.from(itemList.querySelectorAll('input[type="checkbox"]'));
-      const shouldEnable = itemCheckboxes.some((checkbox) => !checkbox.checked);
-      for (const checkbox of itemCheckboxes) {
-        checkbox.checked = shouldEnable;
-        if (shouldEnable) {
-          state.selected.add(checkbox.dataset.id);
-        } else {
-          state.selected.delete(checkbox.dataset.id);
-        }
-      }
-      updateScript();
-      updateCount();
-    });
-
-    categoryList.appendChild(clone);
+    fragment.appendChild(categoryElement);
   }
 
-  updateCount();
-  updateScript();
+  categoryList.replaceChildren(fragment);
+  updateView();
 }
 
 function getSelectedItems() {
-  const items = [];
-  for (const category of state.categories) {
-    for (const item of category.items) {
-      if (state.selected.has(item.id)) {
-        items.push(item);
-      }
-    }
-  }
-  return items;
+  return state.categories.flatMap((category) =>
+    category.items.filter((item) => state.selected.has(item.id)),
+  );
 }
 
 function generateScript() {
-  const selectedItems = getSelectedItems();
   const lines = [
     '#!/usr/bin/env bash',
     'set -euo pipefail',
@@ -102,7 +75,7 @@ function generateScript() {
     '',
   ];
 
-  for (const item of selectedItems) {
+  for (const item of getSelectedItems()) {
     lines.push(`# --- ${item.label} ---`);
     lines.push(item.command);
     lines.push('');
@@ -112,55 +85,95 @@ function generateScript() {
   return lines.join('\n');
 }
 
-function updateScript() {
+function updateView() {
+  const selectedCount = state.selected.size;
+  const totalCount = state.categories.reduce(
+    (total, category) => total + category.items.length,
+    0,
+  );
+  itemCount.textContent = `${selectedCount} of ${totalCount} selected`;
+  selectAllButton.textContent =
+    selectedCount === totalCount ? 'Clear selection' : 'Select all';
   scriptPreview.textContent = generateScript();
 }
 
-function updateCount() {
-  const count = state.selected.size;
-  itemCount.textContent = `${count} selected`;
-}
-
-function selectAll() {
-  for (const category of state.categories) {
-    for (const item of category.items) {
-      state.selected.add(item.id);
-    }
+categoryList.addEventListener('change', (event) => {
+  const checkbox = event.target;
+  if (!(checkbox instanceof HTMLInputElement) || checkbox.type !== 'checkbox') {
+    return;
   }
-  renderCategories();
-}
 
-selectAllButton.addEventListener('click', () => {
-  const currentCount = state.selected.size;
-  const totalCount = state.categories.reduce((sum, category) => sum + category.items.length, 0);
-  if (currentCount < totalCount) {
-    selectAll();
+  if (checkbox.checked) {
+    state.selected.add(checkbox.dataset.id);
   } else {
-    state.selected.clear();
-    renderCategories();
+    state.selected.delete(checkbox.dataset.id);
   }
+  updateView();
 });
 
-document.getElementById('copy-script').addEventListener('click', async () => {
-  const script = generateScript();
-  await navigator.clipboard.writeText(script);
-  document.getElementById('copy-script').textContent = 'Copied!';
-  setTimeout(() => {
-    document.getElementById('copy-script').textContent = 'Copy';
-  }, 1000);
+categoryList.addEventListener('click', (event) => {
+  const toggleButton = event.target.closest('.inline-toggle');
+  if (!toggleButton) {
+    return;
+  }
+
+  const categoryElement = toggleButton.closest('.category-block');
+  const checkboxes = categoryElement.querySelectorAll('input[type="checkbox"]');
+  const shouldSelect = Array.from(checkboxes).some((checkbox) => !checkbox.checked);
+
+  for (const checkbox of checkboxes) {
+    checkbox.checked = shouldSelect;
+    if (shouldSelect) {
+      state.selected.add(checkbox.dataset.id);
+    } else {
+      state.selected.delete(checkbox.dataset.id);
+    }
+  }
+  updateView();
+});
+
+selectAllButton.addEventListener('click', () => {
+  const totalCount = state.categories.reduce(
+    (total, category) => total + category.items.length,
+    0,
+  );
+
+  if (state.selected.size === totalCount) {
+    state.selected.clear();
+  } else {
+    for (const category of state.categories) {
+      for (const item of category.items) {
+        state.selected.add(item.id);
+      }
+    }
+  }
+
+  for (const checkbox of categoryList.querySelectorAll('input[type="checkbox"]')) {
+    checkbox.checked = state.selected.has(checkbox.dataset.id);
+  }
+  updateView();
+});
+
+copyButton.addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(generateScript());
+    copyStatus.textContent = 'Script copied to clipboard.';
+  } catch (error) {
+    copyStatus.textContent = 'Could not copy the script. Check browser clipboard permissions.';
+  }
 });
 
 document.getElementById('download-script').addEventListener('click', () => {
-  const script = generateScript();
-  const blob = new Blob([script], { type: 'application/x-shellscript' });
+  const blob = new Blob([generateScript()], { type: 'application/x-shellscript' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
   link.download = 'fedora-setup.sh';
   link.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
 
 loadData().catch((error) => {
   scriptPreview.textContent = error.message;
+  copyStatus.textContent = error.message;
 });
