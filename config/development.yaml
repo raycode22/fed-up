@@ -1,0 +1,158 @@
+category: development
+label: Development tools
+items:
+  - id: git
+    label: Install Git
+    description: Add Git for version control and source code management.
+    command: sudo dnf install -y git
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["git", "version-control"]
+    status: recommended
+    impact: low
+    install_order: 10
+
+  - id: gh
+    label: Install GitHub CLI
+    description: Install the GitHub command-line client for managing repositories.
+    command: sudo dnf install -y gh
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: ["git"]
+    conflicts_with: []
+    tags: ["git", "github"]
+    status: recommended
+    impact: low
+    install_order: 20
+
+  - id: python-tools
+    label: Install Python toolchain
+    description: Install Python, pip and common command-line utilities.
+    command: sudo dnf install -y python3 python3-pip python3-virtualenv python3-devel
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["python", "dev"]
+    status: recommended
+    impact: medium
+    install_order: 30
+
+  - id: nodejs
+    label: Install Node.js
+    description: Install Node.js and npm for JavaScript development.
+    command: sudo dnf install -y nodejs npm
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["node", "javascript"]
+    status: recommended
+    impact: medium
+    install_order: 40
+
+  - id: java-jdk
+    label: Install Java JDK
+    description: Install the OpenJDK runtime and development kit.
+    command: sudo dnf install -y java-latest-openjdk-devel
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["java", "sdk"]
+    status: optional
+    impact: medium
+    install_order: 50
+
+  - id: rust
+    label: Install Rust toolchain
+    description: Install the Rust compiler and package manager for systems development.
+    command: curl https://sh.rustup.rs -sSf | sh -s -- -y
+    requires_sudo: false
+    tested_fedora: ["39", "40", "41"]
+    depends_on: ["git"]
+    conflicts_with: []
+    tags: ["rust", "systems"]
+    status: optional
+    impact: medium
+    install_order: 60
+
+  - id: docker
+    label: Install Docker
+    description: Add Docker and Docker Compose for container workflows.
+    command: sudo dnf install -y docker docker-compose-plugin && sudo systemctl enable --now docker
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["containers", "docker"]
+    status: optional
+    impact: medium
+    install_order: 70
+
+  - id: kubectl
+    label: Install Kubernetes tools
+    description: Add kubectl and related tooling for Kubernetes development.
+    command: sudo dnf install -y kubectl
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["kubernetes", "cloud"]
+    status: optional
+    impact: medium
+    install_order: 80
+
+  - id: ansible
+    label: Install Ansible
+    description: Add Ansible and related tools for automation projects.
+    command: sudo dnf install -y ansible
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["automation", "devops"]
+    status: optional
+    impact: medium
+    install_order: 90
+
+  - id: terraform
+    label: Install Terraform
+    description: Install Terraform for infrastructure-as-code workflows.
+    command: sudo dnf install -y terraform
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["cloud", "infrastructure"]
+    status: optional
+    impact: medium
+    install_order: 100
+
+  - id: postgresql-client
+    label: Install PostgreSQL client
+    description: Add psql and related client tooling for local database work.
+    command: sudo dnf install -y postgresql
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["database", "postgresql"]
+    status: optional
+    impact: medium
+    install_order: 110
+
+  - id: sqlite-tools
+    label: Install SQLite tools
+    description: Add SQLite3 and database utilities for lightweight development.
+    command: sudo dnf install -y sqlite sqlite-tools
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["database", "sqlite"]
+    status: optional
+    impact: low
+    install_order: 120
