@@ -1,5 +1,5 @@
 category: multimedia
-label: Audio, video & codecs
+label: Audio, Video & Codecs
 items:
   - id: vlc
     label: Install VLC
