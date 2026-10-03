@@ -1,0 +1,158 @@
+category: dnf
+label: DNF & repositories
+items:
+  - id: rpmfusion-free
+    label: Enable RPM Fusion free repo
+    description: Add the RPM Fusion free repository for audio, video and open-source codecs.
+    command: sudo dnf install -y https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["repo", "multimedia", "rpmfusion"]
+    status: recommended
+    impact: medium
+    install_order: 10
+
+  - id: rpmfusion-nonfree
+    label: Enable RPM Fusion nonfree repo
+    description: Add the RPM Fusion nonfree repository for proprietary codecs and drivers.
+    command: sudo dnf install -y https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: ["rpmfusion-free"]
+    conflicts_with: []
+    tags: ["repo", "multimedia", "proprietary"]
+    status: optional
+    impact: medium
+    install_order: 20
+
+  - id: fedora-copr
+    label: Enable COPR repositories
+    description: Add a few community-maintained COPR repositories for extra packages.
+    command: sudo dnf copr enable -y atim/onedrive; sudo dnf copr enable -y solopasha/fedora-workstation-tools
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["repo", "utilities"]
+    status: optional
+    impact: low
+    install_order: 30
+
+  - id: faster-dnf
+    label: Enable fastest mirror detection
+    description: Improve DNF performance by enabling metadata and mirror optimization.
+    command: sudo dnf install -y dnf-plugins-core && sudo dnf config-manager --setopt=max_parallel_downloads=10 --save
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["dnf", "performance"]
+    status: recommended
+    impact: low
+    install_order: 40
+
+  - id: exclude-fedora-updates-testing
+    label: Remove Fedora Updates Testing
+    description: Keep the system stable by disabling the Fedora Updates Testing repository.
+    command: sudo dnf config-manager --set-disabled updates-testing
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["repo", "stability"]
+    status: recommended
+    impact: low
+    install_order: 50
+
+  - id: dnf-automatic
+    label: Enable automatic updates
+    description: Install DNF automatic and configure a periodic daily update check.
+    command: sudo dnf install -y dnf-automatic && sudo systemctl enable --now dnf-automatic.timer
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["updates", "security"]
+    status: recommended
+    impact: low
+    install_order: 60
+
+  - id: gnome-tweaks
+    label: Install GNOME Tweaks
+    description: Add GNOME Settings and an easy way to adjust desktop behavior.
+    command: sudo dnf install -y gnome-tweaks
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["desktop", "gnome"]
+    status: recommended
+    impact: low
+    install_order: 70
+
+  - id: gnome-extensions-app
+    label: Install GNOME Extensions app
+    description: Adds the extensions management app for customizing the desktop.
+    command: sudo dnf install -y gnome-extensions-app
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["desktop", "gnome"]
+    status: optional
+    impact: low
+    install_order: 80
+
+  - id: firewall-default
+    label: Enable default firewall rules
+    description: Ensure the standard Fedora firewall is active.
+    command: sudo firewall-cmd --permanent --add-service=ssh && sudo firewall-cmd --reload
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["security", "network"]
+    status: recommended
+    impact: low
+    install_order: 90
+
+  - id: timeshift
+    label: Install Timeshift
+    description: Install a system restore utility for safer package and system changes.
+    command: sudo dnf install -y timeshift
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["backup", "stability"]
+    status: optional
+    impact: low
+    install_order: 100
+
+  - id: flatpak
+    label: Install Flatpak support
+    description: Enable Flatpak support and the Fedora Flatpak runtime.
+    command: sudo dnf install -y flatpak && flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["flatpak", "apps"]
+    status: recommended
+    impact: low
+    install_order: 110
+
+  - id: google-chrome
+    label: Add Google Chrome repo
+    description: Add the official Google repository for installing Chrome.
+    command: sudo dnf config-manager --add-repo https://dl.google.com/linux/chrome/rpm/stable/x86_64/google-chrome.repo
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["browser", "repo"]
+    status: optional
+    impact: low
+    install_order: 120
