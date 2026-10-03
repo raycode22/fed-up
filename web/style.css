@@ -346,6 +346,12 @@ h3 {
   gap: 0.85rem;
 }
 
+.category-status {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted);
+}
+
 .maintenance-card {
   display: grid;
   gap: 1rem;
