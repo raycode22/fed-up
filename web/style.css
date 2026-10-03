@@ -206,7 +206,7 @@ h3 {
   place-items: center;
   padding: 0;
   border: 1px solid rgb(255 255 255 / 40%);
-  border-radius: 0.55rem;
+  border-radius: 0.5rem;
   background: transparent;
   color: #ffffff;
   cursor: pointer;
@@ -286,7 +286,7 @@ h3 {
   gap: 0.2rem;
   padding: 0.5rem;
   border: 1px solid var(--border);
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
   background: var(--surface);
   box-shadow: var(--shadow);
 }
@@ -353,7 +353,7 @@ h3 {
   padding: clamp(1rem, 2.5vw, 1.4rem);
   border: 1px solid var(--caution-border);
   border-inline-start-width: 0.35rem;
-  border-radius: 0.8rem;
+  border-radius: 0.5rem;
   background: var(--caution-bg);
   color: var(--caution-text);
 }
@@ -397,7 +397,7 @@ h3 {
   min-width: 0;
   padding: clamp(1rem, 2.5vw, 1.75rem);
   border: 1px solid var(--border);
-  border-radius: 1rem;
+  border-radius: 0.5rem;
   background: var(--surface);
   box-shadow: var(--shadow);
 }
@@ -426,7 +426,7 @@ h3 {
 .count-pill {
   padding: 0.3rem 0.7rem;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: 0.4rem;
   background: var(--surface-muted);
   color: var(--text);
   font-size: 0.85rem;
@@ -469,7 +469,7 @@ h3 {
   gap: 1rem;
   padding: clamp(1rem, 2vw, 1.4rem);
   border: 1px solid var(--border);
-  border-radius: 0.8rem;
+  border-radius: 0.5rem;
   background: var(--surface-muted);
 }
 
@@ -542,7 +542,7 @@ h3 {
   min-width: 0;
   overflow: clip;
   border: 1px solid var(--border);
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
   background: var(--surface);
 }
 
@@ -563,7 +563,7 @@ h3 {
   height: 2.25rem;
   place-items: center;
   border: 1px solid var(--border);
-  border-radius: 0.65rem;
+  border-radius: 0.5rem;
   background: var(--surface-muted);
   color: var(--accent-strong);
 }
@@ -639,7 +639,7 @@ h3 {
   gap: 0.7rem;
   padding: 0.75rem;
   border: 1px solid var(--border);
-  border-radius: 0.6rem;
+  border-radius: 0.5rem;
   background: var(--surface-muted);
   cursor: pointer;
 }
@@ -675,7 +675,7 @@ h3 {
 .tag {
   padding: 0.15rem 0.45rem;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: 0.4rem;
   color: var(--muted);
   font-size: 0.68rem;
   font-weight: 700;
@@ -687,7 +687,7 @@ h3 {
   min-height: 2.65rem;
   padding: 0.55rem 0.85rem;
   border: 1px solid transparent;
-  border-radius: 0.55rem;
+  border-radius: 0.5rem;
   font: inherit;
   font-size: 0.9rem;
   font-weight: 700;
@@ -725,7 +725,7 @@ h3 {
   margin: 0;
   padding: 1rem;
   border: 1px solid var(--border);
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
   background: var(--code-bg);
   color: #f1f2f8;
   font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
@@ -773,7 +773,7 @@ h3 {
   gap: 0.65rem;
   padding: clamp(1rem, 2vw, 1.4rem);
   border: 1px solid var(--border);
-  border-radius: 0.9rem;
+  border-radius: 0.5rem;
   background: var(--surface);
   box-shadow: var(--shadow);
 }
@@ -810,7 +810,7 @@ h3 {
   gap: 0.8rem;
   padding: 1rem 1.2rem;
   border: 1px solid var(--border);
-  border-radius: 0.8rem;
+  border-radius: 0.5rem;
   background: var(--surface-muted);
 }
 
