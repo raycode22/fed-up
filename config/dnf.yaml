@@ -1,5 +1,5 @@
 category: dnf
-label: DNF & repositories
+label: DNF & Repositories
 items:
   - id: rpmfusion-free
     label: Enable RPM Fusion free repo
