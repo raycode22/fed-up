@@ -1,5 +1,5 @@
 category: tweaks
-label: System tweaks
+label: System Tweaks
 items:
   - id: zsh
     label: Install Zsh
