@@ -4,7 +4,7 @@ items:
   - id: zsh
     label: Install Zsh
     description: Install Zsh and make it available as a default shell.
-    command: sudo dnf install -y zsh && chsh -s $(which zsh)
+    command: sudo dnf install -y zsh && sudo usermod --shell "$(command -v zsh)" "$USER"
     requires_sudo: true
     tested_fedora: ["39", "40", "41"]
     depends_on: []
