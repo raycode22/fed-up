@@ -86,39 +86,61 @@
           </div>
           <div class="selection-controls">
             <output id="item-count" class="count-pill" aria-live="polite">0 selected</output>
-            <button id="select-all" class="button button-secondary" type="button">Clear selection</button>
+            <button id="select-recommended" class="button button-secondary button-recommended" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="m5 12 4 4L19 6" />
+              </svg>
+              <span>Select recommended</span>
+            </button>
+            <button id="select-all" class="button button-secondary" type="button">Select all</button>
           </div>
         </div>
         <section id="category-list" class="category-list" aria-label="Setup categories">
           <p class="category-status" role="status" aria-live="polite">Loading setup options...</p>
         </section>
 
-        <section class="maintenance-card" aria-labelledby="maintenance-heading">
+      </section>
+
+      <section class="maintenance-tools" aria-labelledby="maintenance-heading">
+        <div class="maintenance-heading">
+          <p class="eyebrow">After setup</p>
+          <h2 id="maintenance-heading">Care for your Fedora system</h2>
+        </div>
+        <article class="maintenance-card" aria-labelledby="cleanup-heading">
           <div class="maintenance-copy">
-            <p class="eyebrow">After setup</p>
-            <h2 id="maintenance-heading">System cleanup &amp; revert</h2>
+            <h3 id="cleanup-heading" class="maintenance-title">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M5 3 18 16m-3-3 5 5-5 5-5-5m8 2-3 3m0-6-3 3m0-6-3 3" />
+              </svg>
+              Clean up package caches
+            </h3>
             <p>
-              Generate a Fedora cache cleanup script or a review-before-removal rollback for
-              RPM packages newly installed by current Fed-up setup scripts. Neither option
-              removes personal files.
+              Clear DNF caches and review DNF's proposal to remove unused dependencies. It may
+              include packages unrelated to Fed-up, so cancel if unsure.
             </p>
           </div>
-          <div class="maintenance-actions">
-            <button id="generate-cleanup" class="button button-secondary" type="button">
-              Generate cleanup script
-            </button>
-            <button id="generate-revert" class="button button-secondary" type="button">
-              Generate Fed-up revert script
-            </button>
+          <button id="generate-cleanup" class="button button-secondary" type="button">
+            Generate cleanup script
+          </button>
+        </article>
+        <article class="maintenance-card" aria-labelledby="revert-heading">
+          <div class="maintenance-copy">
+            <h3 id="revert-heading" class="maintenance-title">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-2" />
+              </svg>
+              Undo Fed-up installs
+            </h3>
+            <p>
+              Generate a review-before-removal rollback for RPM packages tracked by current
+              Fed-up setup scripts. Earlier scripts did not create a package manifest.
+              Repositories, settings, Flatpaks, and personal files are not changed.
+            </p>
           </div>
-          <p class="maintenance-note">
-            Cleanup runs <code>dnf clean all</code> and offers DNF's interactive
-            <code>autoremove</code> proposal for your review; DNF may include dependencies
-            unrelated to Fed-up, so cancel if unsure. Revert targets RPM packages tracked by
-            current Fed-up setup scripts; earlier scripts did not create a revert manifest.
-            Revert leaves repositories, system settings, Flatpaks, and user data unchanged.
-          </p>
-        </section>
+          <button id="generate-revert" class="button button-secondary" type="button">
+            Generate revert script
+          </button>
+        </article>
       </section>
 
       <article class="panel script-panel" id="script" aria-labelledby="script-heading">
@@ -217,10 +239,7 @@
         <label class="item-row">
           <input type="checkbox" />
           <span class="item-text">
-            <span class="item-title-row">
-              <span class="item-mark" aria-hidden="true"></span>
-              <span class="item-title"></span>
-            </span>
+            <span class="item-title"></span>
             <span class="item-desc"></span>
           </span>
           <span class="tag"></span>
