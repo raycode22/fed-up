@@ -9,6 +9,31 @@ const scriptPreview = document.getElementById('script-preview');
 const selectAllButton = document.getElementById('select-all');
 const copyButton = document.getElementById('copy-script');
 const copyStatus = document.getElementById('copy-status');
+const scriptHeading = document.getElementById('script-heading');
+const scriptDescription = document.getElementById('script-description');
+const downloadButton = document.getElementById('download-script');
+const TRACKING_FILE = '/var/lib/fed-up/installed-packages';
+const SCRIPT_MODES = {
+  setup: {
+    title: 'Generated setup script',
+    description:
+      'Select setup items to customize the script. New RPM packages installed by this script are recorded for the Fed-up revert option.',
+    filename: 'fedora-setup.sh',
+  },
+  cleanup: {
+    title: 'Generated cleanup script',
+    description:
+      'Clears DNF caches, then asks DNF to propose unused dependencies, which may be unrelated to Fed-up. Review the list and cancel if unsure.',
+    filename: 'fedora-cleanup.sh',
+  },
+  revert: {
+    title: 'Generated Fed-up revert script',
+    description:
+      'Removes only RPM packages recorded as newly installed by a current Fed-up setup script. Earlier scripts did not create a package manifest. DNF asks for confirmation; repositories, settings, Flatpaks, and personal files are not changed.',
+    filename: 'fed-up-revert.sh',
+  },
+};
+let scriptMode = 'setup';
 
 async function loadData() {
   const response = await fetch('./data.json');
@@ -70,6 +95,35 @@ function generateScript() {
     '#!/usr/bin/env bash',
     'set -euo pipefail',
     '',
+    '# Record RPM packages newly installed while this setup script runs.',
+    `TRACKING_FILE='${TRACKING_FILE}'`,
+    'TRACKING_DIR="$(dirname "$TRACKING_FILE")"',
+    'BEFORE_PACKAGES="$(mktemp)"',
+    'rpm -qa --qf \'%{NAME}\\n\' | sort -u > "$BEFORE_PACKAGES"',
+    'record_new_packages() {',
+    '  local script_status=$?',
+    '  trap - EXIT',
+    '  local current_packages new_packages combined_packages',
+    '  current_packages="$(mktemp)"',
+    '  new_packages="$(mktemp)"',
+    '  combined_packages="$(mktemp)"',
+    '  rpm -qa --qf \'%{NAME}\\n\' | sort -u > "$current_packages"',
+    '  comm -13 "$BEFORE_PACKAGES" "$current_packages" > "$new_packages"',
+    '  if [[ -s "$new_packages" ]]; then',
+    '    sudo install -d -m 0755 "$TRACKING_DIR"',
+    '    {',
+    '      if sudo test -f "$TRACKING_FILE"; then',
+    '        sudo cat "$TRACKING_FILE"',
+    '      fi',
+    '      cat "$new_packages"',
+    '    } | sort -u > "$combined_packages"',
+    '    sudo install -m 0644 "$combined_packages" "$TRACKING_FILE"',
+    '  fi',
+    '  rm -f "$BEFORE_PACKAGES" "$current_packages" "$new_packages" "$combined_packages"',
+    '  exit "$script_status"',
+    '}',
+    'trap record_new_packages EXIT',
+    '',
     'echo "Running Fedora setup script..."',
     'sudo true',
     '',
@@ -85,6 +139,75 @@ function generateScript() {
   return lines.join('\n');
 }
 
+function generateCleanupScript() {
+  return [
+    '#!/usr/bin/env bash',
+    'set -euo pipefail',
+    '',
+    'echo "Cleaning Fedora package manager caches..."',
+    'sudo dnf clean all',
+    '',
+    'echo "DNF may propose unrelated unused dependencies. Review the list and cancel if unsure."',
+    'sudo dnf autoremove',
+    '',
+    'echo "Fedora cleanup complete."',
+  ].join('\n');
+}
+
+function generateRevertScript() {
+  return [
+    '#!/usr/bin/env bash',
+    'set -euo pipefail',
+    '',
+    `TRACKING_FILE='${TRACKING_FILE}'`,
+    'if ! sudo test -s "$TRACKING_FILE"; then',
+    '  echo "No Fed-up package manifest found. Nothing to remove."',
+    '  exit 0',
+    'fi',
+    '',
+    'mapfile -t tracked_packages < <(sudo cat "$TRACKING_FILE")',
+    'installed_packages=()',
+    'for package in "${tracked_packages[@]}"; do',
+    '  [[ -n "$package" ]] || continue',
+    '  if [[ ! "$package" =~ ^[A-Za-z0-9._+-]+$ ]]; then',
+    '    echo "Invalid package name in Fed-up manifest; refusing to continue." >&2',
+    '    exit 1',
+    '  fi',
+    '  if rpm -q --quiet "$package"; then',
+    '    installed_packages+=("$package")',
+    '  fi',
+    'done',
+    '',
+    'if ((${#installed_packages[@]} == 0)); then',
+    '  echo "No tracked Fed-up RPM packages are currently installed."',
+    '  exit 0',
+    'fi',
+    '',
+    'printf "The following Fed-up-tracked RPM packages will be offered for removal:\\n"',
+    'printf "  %s\\n" "${installed_packages[@]}"',
+    'printf "\\nDNF may also propose removing dependencies. Review its transaction carefully.\\n"',
+    'read -r -p "Type remove to continue: " confirmation',
+    'if [[ "$confirmation" != "remove" ]]; then',
+    '  echo "Cancelled. No packages were removed."',
+    '  exit 0',
+    'fi',
+    '',
+    'sudo dnf remove "${installed_packages[@]}"',
+    `sudo rm -f '${TRACKING_FILE}'`,
+    'echo "Fed-up package rollback complete."',
+  ].join('\n');
+}
+
+function getCurrentScript() {
+  if (scriptMode === 'cleanup') {
+    return generateCleanupScript();
+  }
+  if (scriptMode === 'revert') {
+    return generateRevertScript();
+  }
+  return generateScript();
+}
+
 function updateView() {
   const selectedCount = state.selected.size;
   const totalCount = state.categories.reduce(
@@ -94,7 +217,16 @@ function updateView() {
   itemCount.textContent = `${selectedCount} of ${totalCount} selected`;
   selectAllButton.textContent =
     selectedCount === totalCount ? 'Clear selection' : 'Select all';
-  scriptPreview.textContent = generateScript();
+  const mode = SCRIPT_MODES[scriptMode];
+  scriptHeading.textContent = mode.title;
+  scriptDescription.textContent = mode.description;
+  downloadButton.download = mode.filename;
+  scriptPreview.textContent = getCurrentScript();
+}
+
+function setScriptMode(mode) {
+  scriptMode = mode;
+  updateView();
 }
 
 categoryList.addEventListener('change', (event) => {
@@ -156,7 +288,7 @@ selectAllButton.addEventListener('click', () => {
 
 copyButton.addEventListener('click', async () => {
   try {
-    await navigator.clipboard.writeText(generateScript());
+    await navigator.clipboard.writeText(getCurrentScript());
     copyStatus.textContent = 'Script copied to clipboard.';
   } catch (error) {
     copyStatus.textContent = 'Could not copy the script. Check browser clipboard permissions.';
@@ -164,13 +296,21 @@ copyButton.addEventListener('click', async () => {
 });
 
 document.getElementById('download-script').addEventListener('click', () => {
-  const blob = new Blob([generateScript()], { type: 'application/x-shellscript' });
+  const blob = new Blob([getCurrentScript()], { type: 'application/x-shellscript' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = 'fedora-setup.sh';
+  link.download = SCRIPT_MODES[scriptMode].filename;
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+
+document.getElementById('generate-cleanup').addEventListener('click', () => {
+  setScriptMode('cleanup');
+});
+
+document.getElementById('generate-revert').addEventListener('click', () => {
+  setScriptMode('revert');
 });
 
 loadData().catch((error) => {
