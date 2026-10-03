@@ -13,6 +13,17 @@ const scriptHeading = document.getElementById('script-heading');
 const scriptDescription = document.getElementById('script-description');
 const downloadButton = document.getElementById('download-script');
 const TRACKING_FILE = '/var/lib/fed-up/installed-packages';
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const CATEGORY_ICON_PATHS = {
+  dnf: ['M4 7 12 3l8 4-8 4-8-4Z', 'M4 7v10l8 4 8-4V7', 'M12 11v10', 'M8 5l8 4'],
+  multimedia: ['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z', 'm10 8 6 4-6 4V8Z'],
+  tweaks: [
+    'M12 3v2m0 14v2m9-9h-2M5 12H3m15.36-6.36-1.42 1.42M7.06 16.94l-1.42 1.42m12.72 0-1.42-1.42M7.06 7.06 5.64 5.64',
+    'M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z',
+    'M19 12a7 7 0 0 0-.08-1l1.55-1.2-1.5-2.6-1.86.62a7 7 0 0 0-1.73-1L15.1 5h-3l-.28 1.82a7 7 0 0 0-1.73 1l-1.86-.62-1.5 2.6L8.28 11a7 7 0 0 0 0 2l-1.55 1.2 1.5 2.6 1.86-.62a7 7 0 0 0 1.73 1L12.1 19h3l.28-1.82a7 7 0 0 0 1.73-1l1.86.62 1.5-2.6L18.92 13a7 7 0 0 0 .08-1Z',
+  ],
+  development: ['m8 8-4 4 4 4', 'm16 8 4 4-4 4', 'm14 5-4 14'],
+};
 const SCRIPT_MODES = {
   setup: {
     title: 'Generated setup script',
@@ -47,10 +58,28 @@ async function loadData() {
   }
 
   state.categories = payload.categories;
-  state.selected = new Set(
-    state.categories.flatMap((category) => category.items.map((item) => item.id)),
-  );
+  state.selected = new Set();
   renderCategories();
+}
+
+function createCategoryIcon(categoryId) {
+  const paths = CATEGORY_ICON_PATHS[categoryId];
+  if (!paths) {
+    return null;
+  }
+
+  const icon = document.createElementNS(SVG_NS, 'svg');
+  icon.setAttribute('viewBox', '0 0 24 24');
+  icon.setAttribute('focusable', 'false');
+  icon.classList.add('category-symbol');
+
+  for (const pathData of paths) {
+    const path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('d', pathData);
+    icon.appendChild(path);
+  }
+
+  return icon;
 }
 
 function renderCategories() {
@@ -61,6 +90,10 @@ function renderCategories() {
   for (const category of state.categories) {
     const categoryElement = categoryTemplate.content.firstElementChild.cloneNode(true);
     categoryElement.dataset.category = category.category;
+    const icon = createCategoryIcon(category.category);
+    if (icon) {
+      categoryElement.querySelector('.category-icon').appendChild(icon);
+    }
     categoryElement.querySelector('h3').textContent = category.label;
     categoryElement.querySelector('.category-item-count').textContent =
       `${category.items.length} items`;
