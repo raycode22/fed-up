@@ -1,5 +1,5 @@
 site:
-  name: Fedora Automation Tool
+  name: Fed-up
   tagline: Build a custom Fedora workstation setup with one click.
   description: Generate a personalized Fedora Linux setup script from a curated set of package, media, and system tweaks.
   version: "1.0.0"
@@ -11,8 +11,8 @@ site:
   homepage: https://yourusername.github.io/fedora-automation/
 
 ui:
-  title: Fedora Setup Generator
-  subtitle: Select the changes you want, then download a bash script.
+  title: Fed-up
+  subtitle: System Setup Shell Script Builder for Fedora Linux
   script_name: fedora-setup.sh
 
 build:
