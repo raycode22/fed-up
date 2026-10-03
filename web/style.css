@@ -516,6 +516,37 @@ h3 {
   gap: 0.2rem;
 }
 
+.item-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.item-mark {
+  display: inline-grid;
+  flex: 0 0 2.4rem;
+  width: 2.4rem;
+  min-height: 2.15rem;
+  place-items: center;
+  padding: 0.2rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--surface);
+  color: var(--accent-strong);
+  font-size: 0.52rem;
+  font-weight: 850;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.item-mark-icon {
+  font-size: 1.05rem;
+  letter-spacing: normal;
+}
+
 .item-title {
   font-weight: 700;
   line-height: 1.35;

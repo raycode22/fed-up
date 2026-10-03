@@ -14,6 +14,57 @@ const scriptDescription = document.getElementById('script-description');
 const downloadButton = document.getElementById('download-script');
 const TRACKING_FILE = '/var/lib/fed-up/installed-packages';
 const SVG_NS = 'http://www.w3.org/2000/svg';
+const ITEM_MARKS = {
+  'rpmfusion-free': 'RPM',
+  'rpmfusion-nonfree': 'RPM+',
+  'fedora-copr': 'COPR',
+  'faster-dnf': 'DNF',
+  'exclude-fedora-updates-testing': '🧪',
+  'dnf-automatic': '↻',
+  'gnome-tweaks': 'GNOME',
+  'gnome-extensions-app': 'GN+',
+  'firewall-default': '🛡️',
+  timeshift: 'TS',
+  flatpak: 'FLAT',
+  'google-chrome': 'CHRM',
+  vlc: 'VLC',
+  ffmpeg: 'FF',
+  'gstreamer-plugins': 'GST',
+  steam: 'STEAM',
+  'obs-studio': 'OBS',
+  'kde-multimedia': 'KDE',
+  spotify: 'SPOT',
+  libreoffice: 'LIBRE',
+  'adobe-reader': 'PDF',
+  handbrake: 'HB',
+  zsh: 'ZSH',
+  'power-profiles-daemon': '⚡',
+  tlp: 'TLP',
+  'ntfs-support': '💾',
+  virtualbox: 'VBOX',
+  'libreoffice-fonts': 'Aa',
+  'firewall-cockpit': 'CKPT',
+  criu: 'CRIU',
+  git: 'GIT',
+  gh: 'GH',
+  'python-tools': 'PY',
+  nodejs: 'NODE',
+  'java-jdk': 'JAVA',
+  rust: 'RUST',
+  docker: 'DOCKER',
+  kubectl: 'K8S',
+  ansible: 'ANS',
+  terraform: 'TF',
+  'postgresql-client': 'PG',
+  'sqlite-tools': 'SQL',
+};
+const ITEM_ICON_IDS = new Set([
+  'exclude-fedora-updates-testing',
+  'dnf-automatic',
+  'firewall-default',
+  'power-profiles-daemon',
+  'ntfs-support',
+]);
 const CATEGORY_ICON_PATHS = {
   dnf: ['M4 7 12 3l8 4-8 4-8-4Z', 'M4 7v10l8 4 8-4V7', 'M12 11v10', 'M8 5l8 4'],
   multimedia: ['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z', 'm10 8 6 4-6 4V8Z'],
@@ -122,6 +173,16 @@ function renderCategories() {
       const checkbox = itemElement.querySelector('input');
       checkbox.dataset.id = item.id;
       checkbox.checked = state.selected.has(item.id);
+      const itemMark = itemElement.querySelector('.item-mark');
+      itemMark.textContent =
+        ITEM_MARKS[item.id] ??
+        item.label
+          .split(/\s+/)
+          .slice(0, 2)
+          .map((word) => word[0])
+          .join('')
+          .toUpperCase();
+      itemMark.classList.toggle('item-mark-icon', ITEM_ICON_IDS.has(item.id));
       itemElement.querySelector('.item-title').textContent = item.label;
       itemElement.querySelector('.item-desc').textContent = item.description;
       itemElement.querySelector('.tag').textContent = item.impact;
