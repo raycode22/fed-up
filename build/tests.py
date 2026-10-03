@@ -38,3 +38,15 @@ def test_generated_json_matches_schema() -> None:
         "System Tweaks",
         "Development Tools",
     ]
+
+
+def test_zsh_install_uses_noninteractive_shell_change() -> None:
+    data = validate_complete_payload(Path("config"))
+    zsh_item = next(
+        item
+        for category in data["categories"]
+        for item in category["items"]
+        if item["id"] == "zsh"
+    )
+    assert "usermod --shell" in zsh_item["command"]
+    assert "chsh" not in zsh_item["command"]

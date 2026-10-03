@@ -32,7 +32,7 @@ const SCRIPT_MODES = {
   setup: {
     title: 'Generated setup script',
     description:
-      'Select setup items to customize the script. New RPM packages installed by this script are recorded for the Fed-up revert option.',
+      'Select setup items to customize the script. The downloaded Bash script checks Fedora and required tools, then offers guided quiet or verbose installs, per-item confirmations, or a no-prompt install mode.',
     filename: 'fedora-setup.sh',
   },
   cleanup: {
@@ -161,12 +161,165 @@ function getSelectedItems() {
   );
 }
 
+function shellQuote(value) {
+  return `'${value.replace(/'/g, "'\\''")}'`;
+}
+
 function generateScript() {
+  const selectedItems = getSelectedItems();
+  if (selectedItems.length === 0) {
+    return [
+      '#!/usr/bin/env bash',
+      'set -euo pipefail',
+      '',
+      'printf "%s\\n" "No setup options selected. Nothing to install."',
+    ].join('\n');
+  }
+
+  const selectedIds = new Set(selectedItems.map((item) => item.id));
+  const conflictingPairs = new Set();
+  const conflictMessages = [];
+  const dependencyWarnings = [];
+
+  for (const item of selectedItems) {
+    for (const conflict of item.conflicts_with) {
+      if (selectedIds.has(conflict)) {
+        const pair = [item.id, conflict].sort().join(':');
+        if (!conflictingPairs.has(pair)) {
+          conflictingPairs.add(pair);
+          const conflictingItem = selectedItems.find((selected) => selected.id === conflict);
+          conflictMessages.push(
+            `${item.label} conflicts with ${conflictingItem.label}.`,
+          );
+        }
+      }
+    }
+
+    for (const dependency of item.depends_on) {
+      if (!selectedIds.has(dependency)) {
+        dependencyWarnings.push(
+          `${item.label} depends on ${dependency}, which is not selected; it must already be available or this step may fail.`,
+        );
+      }
+    }
+  }
+
+  const requiredCommands = ['dnf', 'rpm', 'sudo'];
+  for (const command of ['curl', 'flatpak', 'systemctl', 'firewall-cmd', 'usermod']) {
+    if (selectedItems.some((item) => new RegExp(`\\b${command}\\b`).test(item.command))) {
+      requiredCommands.push(command);
+    }
+  }
+
   const lines = [
     '#!/usr/bin/env bash',
     'set -euo pipefail',
     '',
-    '# Record RPM packages newly installed while this setup script runs.',
+    'RUN_MODE=guided',
+    'OUTPUT_MODE=verbose',
+    'AUTO_APPROVE=false',
+    'MODE_SELECTED=false',
+    'RUN_CANCELLED=false',
+    'for argument in "$@"; do',
+    '  case "$argument" in',
+    '    --yes) AUTO_APPROVE=true ;;',
+    '    --quiet) OUTPUT_MODE=quiet; MODE_SELECTED=true ;;',
+    '    --verbose) OUTPUT_MODE=verbose; MODE_SELECTED=true ;;',
+    '    --help)',
+    '      printf "%s\\n" "Usage: $0 [--yes] [--quiet|--verbose]" "  --yes      Install every selected option without script prompts" "  --quiet    Confirm each option; hide successful command output" "  --verbose  Confirm each option; show command output"',
+    '      exit 0',
+    '      ;;',
+    '    *) printf "Unknown option: %s\\n" "$argument" >&2; exit 2 ;;',
+    '  esac',
+    'done',
+    '',
+    'if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then',
+    '  COLOR_RESET=$\'\\033[0m\'',
+    '  COLOR_ACCENT=$\'\\033[1;36m\'',
+    '  COLOR_SUCCESS=$\'\\033[1;32m\'',
+    '  COLOR_WARNING=$\'\\033[1;33m\'',
+    '  COLOR_ERROR=$\'\\033[1;31m\'',
+    'else',
+    '  COLOR_RESET=',
+    '  COLOR_ACCENT=',
+    '  COLOR_SUCCESS=',
+    '  COLOR_WARNING=',
+    '  COLOR_ERROR=',
+    'fi',
+    '',
+    'show_header() {',
+    '  printf "\\n%s╭──────────────────────────────────────────╮%s\\n" "$COLOR_ACCENT" "$COLOR_RESET"',
+    '  printf "%s│          Fedora setup · Fed-up           │%s\\n" "$COLOR_ACCENT" "$COLOR_RESET"',
+    '  printf "%s╰──────────────────────────────────────────╯%s\\n\\n" "$COLOR_ACCENT" "$COLOR_RESET"',
+    '}',
+    '',
+    'show_header',
+    'if [[ ! -f /etc/fedora-release ]]; then',
+    '  printf "%s%s%s\\n" "$COLOR_ERROR" "This script is intended for Fedora Linux." "$COLOR_RESET" >&2',
+    '  exit 1',
+    'fi',
+    '',
+    `REQUIRED_COMMANDS=(${requiredCommands.map(shellQuote).join(' ')})`,
+    'for required_command in "${REQUIRED_COMMANDS[@]}"; do',
+    '  if ! command -v "$required_command" >/dev/null 2>&1; then',
+    '    printf "%sRequired command is missing: %s%s\\n" "$COLOR_ERROR" "$required_command" "$COLOR_RESET" >&2',
+    '    exit 1',
+    '  fi',
+    'done',
+    'printf "%s✓%s Fedora %s detected; required tools are available.\\n" "$COLOR_SUCCESS" "$COLOR_RESET" "$(rpm -E %fedora)"',
+    '',
+    ...conflictMessages.flatMap((message) => [
+      `printf "%sConflict:%s %s\\n" "$COLOR_ERROR" "$COLOR_RESET" ${shellQuote(message)}`,
+      'exit 1',
+    ]),
+    ...dependencyWarnings.map((warning) =>
+      `printf "%sNote:%s %s\\n" "$COLOR_WARNING" "$COLOR_RESET" ${shellQuote(warning)}`,
+    ),
+    '',
+    `printf "\\nSelected setup options (%s):\\n" "${selectedItems.length}"`,
+    ...selectedItems.map((item) => `printf "  • %s\\n" ${shellQuote(item.label)}`),
+    '',
+    'if [[ "$AUTO_APPROVE" == true ]]; then',
+    '  RUN_MODE=all',
+    'elif [[ "$MODE_SELECTED" == false ]]; then',
+    '  if [[ ! -t 0 || ! -t 1 ]]; then',
+    '    printf "%sRun this script in a terminal, or pass --yes to install without script prompts.%s\\n" "$COLOR_ERROR" "$COLOR_RESET" >&2',
+    '    exit 2',
+    '  fi',
+    '  printf "\\nChoose how to run these options:\\n"',
+    '  printf "  1) Guided, quiet output   — confirm each option; show details only on errors\\n"',
+    '  printf "  2) Guided, verbose output — confirm each option; show command output\\n"',
+    '  printf "  3) Install all now        — no further script prompts\\n"',
+    '  printf "  q) Cancel\\n\\n"',
+    '  while true; do',
+    '    read -r -p "Select a mode [1/2/3/q]: " mode_choice </dev/tty || exit 2',
+    '    case "$mode_choice" in',
+    '      1) RUN_MODE=guided; OUTPUT_MODE=quiet; break ;;',
+    '      2) RUN_MODE=guided; OUTPUT_MODE=verbose; break ;;',
+    '      3) RUN_MODE=all; break ;;',
+    '      q|Q) printf "Cancelled; nothing was installed.\\n"; exit 0 ;;',
+    '      *) printf "Choose 1, 2, 3, or q.\\n" ;;',
+    '    esac',
+    '  done',
+    'fi',
+    '',
+    'SUDO=(sudo)',
+    'if [[ "$RUN_MODE" == all ]]; then',
+    '  if ! sudo -n true 2>/dev/null; then',
+    '    printf "%sNon-interactive install needs an active sudo session. Run sudo -v, then retry.%s\\n" "$COLOR_ERROR" "$COLOR_RESET" >&2',
+    '    exit 1',
+    '  fi',
+    '  SUDO=(sudo -n)',
+    'else',
+    '  sudo -v',
+    '  printf "\\nGuided install: each option can be installed, skipped, or cancelled.\\n"',
+    '  read -r -p "Continue with guided install? [y/N]: " answer </dev/tty || exit 2',
+    '  if [[ ! "$answer" =~ ^[Yy]$ ]]; then',
+    '    printf "Cancelled; nothing was installed.\\n"',
+    '    exit 0',
+    '  fi',
+    'fi',
+    '',
     `TRACKING_FILE='${TRACKING_FILE}'`,
     'TRACKING_DIR="$(dirname "$TRACKING_FILE")"',
     'BEFORE_PACKAGES="$(mktemp)"',
@@ -181,32 +334,78 @@ function generateScript() {
     '  rpm -qa --qf \'%{NAME}\\n\' | sort -u > "$current_packages"',
     '  comm -13 "$BEFORE_PACKAGES" "$current_packages" > "$new_packages"',
     '  if [[ -s "$new_packages" ]]; then',
-    '    sudo install -d -m 0755 "$TRACKING_DIR"',
+    '    "${SUDO[@]}" install -d -m 0755 "$TRACKING_DIR"',
     '    {',
-    '      if sudo test -f "$TRACKING_FILE"; then',
-    '        sudo cat "$TRACKING_FILE"',
+    '      if "${SUDO[@]}" test -f "$TRACKING_FILE"; then',
+    '        "${SUDO[@]}" cat "$TRACKING_FILE"',
     '      fi',
     '      cat "$new_packages"',
     '    } | sort -u > "$combined_packages"',
-    '    sudo install -m 0644 "$combined_packages" "$TRACKING_FILE"',
+    '    "${SUDO[@]}" install -m 0644 "$combined_packages" "$TRACKING_FILE"',
     '  fi',
     '  rm -f "$BEFORE_PACKAGES" "$current_packages" "$new_packages" "$combined_packages"',
     '  exit "$script_status"',
     '}',
     'trap record_new_packages EXIT',
     '',
-    'echo "Running Fedora setup script..."',
-    'sudo true',
+    'run_item() {',
+    '  local label="$1" item_command answer status log_file',
+    '  item_command="$(cat)"',
+    '  if [[ "$RUN_MODE" == all ]]; then',
+    '    item_command="${item_command//sudo /sudo -n }"',
+    '  fi',
+    '  if [[ "$RUN_MODE" == guided ]]; then',
+    '    while true; do',
+    '      read -r -p "Install \\"$label\\"? [y]es / [n]o / [c]ancel: " answer </dev/tty || return 2',
+    '      case "$answer" in',
+    '        y|Y|yes|YES) break ;;',
+    '        n|N|no|NO) printf "Skipped: %s\\n" "$label"; return 0 ;;',
+    '      c|C|cancel|CANCEL) RUN_CANCELLED=true; return 0 ;;',
+    '        *) printf "Choose y, n, or c.\\n" ;;',
+    '      esac',
+    '    done',
+    '  fi',
+    '  printf "%s▶%s %s\\n" "$COLOR_ACCENT" "$COLOR_RESET" "$label"',
+    '  if [[ "$OUTPUT_MODE" == quiet ]]; then',
+    '    log_file="$(mktemp)"',
+    '    if bash -c "$item_command" >"$log_file" 2>&1; then',
+    '      rm -f "$log_file"',
+    '      printf "%s✓%s Completed: %s\\n" "$COLOR_SUCCESS" "$COLOR_RESET" "$label"',
+    '    else',
+    '      status=$?',
+    '      cat "$log_file" >&2',
+    '      rm -f "$log_file"',
+    '      return "$status"',
+    '    fi',
+    '  else',
+    '    bash -c "$item_command"',
+    '  fi',
+    '}',
+    '',
+    'item_status=0',
     '',
   ];
 
-  for (const item of getSelectedItems()) {
-    lines.push(`# --- ${item.label} ---`);
+  for (const [index, item] of selectedItems.entries()) {
+    lines.push(`if run_item ${shellQuote(item.label)} <<'FEDUP_COMMAND_${index}'`);
     lines.push(item.command);
+    lines.push(`FEDUP_COMMAND_${index}`);
+    lines.push('then');
+    lines.push('  if [[ "$RUN_CANCELLED" == true ]]; then');
+    lines.push('    printf "Cancelled; no more options will be processed.\\n"');
+    lines.push('    exit 0');
+    lines.push('  fi');
+    lines.push('else');
+    lines.push('  item_status=$?');
+    lines.push(
+      `  printf "%sFailed while processing: %s%s\\n" "$COLOR_ERROR" ${shellQuote(item.label)} "$COLOR_RESET" >&2`,
+    );
+    lines.push('  exit "$item_status"');
+    lines.push('fi');
     lines.push('');
   }
 
-  lines.push('echo "Setup complete."');
+  lines.push('printf "%s✓%s Setup run complete.\\n" "$COLOR_SUCCESS" "$COLOR_RESET"');
   return lines.join('\n');
 }
 
