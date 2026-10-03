@@ -1,0 +1,132 @@
+category: multimedia
+label: Audio, video & codecs
+items:
+  - id: vlc
+    label: Install VLC
+    description: Play media files with the popular VLC media player.
+    command: sudo dnf install -y vlc
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: ["rpmfusion-free"]
+    conflicts_with: []
+    tags: ["media", "player"]
+    status: recommended
+    impact: medium
+    install_order: 10
+
+  - id: ffmpeg
+    label: Install FFmpeg
+    description: Add the FFmpeg stack for conversion, recording and streaming.
+    command: sudo dnf install -y ffmpeg ffmpeg-devel
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: ["rpmfusion-free"]
+    conflicts_with: []
+    tags: ["media", "codec"]
+    status: recommended
+    impact: medium
+    install_order: 20
+
+  - id: gstreamer-plugins
+    label: Install GStreamer plugins
+    description: Add GStreamer codecs and extra media support.
+    command: sudo dnf install -y gstreamer1-plugins-{base,good,bad,ugly} gstreamer1-libav gstreamer1-plugin-openh264
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: ["rpmfusion-free"]
+    conflicts_with: []
+    tags: ["media", "codec"]
+    status: recommended
+    impact: medium
+    install_order: 30
+
+  - id: steam
+    label: Install Steam
+    description: Add Valve's Steam client for gaming.
+    command: sudo dnf install -y steam
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: ["rpmfusion-nonfree"]
+    conflicts_with: []
+    tags: ["gaming", "multimedia"]
+    status: optional
+    impact: medium
+    install_order: 40
+
+  - id: obs-studio
+    label: Install OBS Studio
+    description: Record and stream your desktop with OBS.
+    command: sudo dnf install -y obs-studio
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: ["rpmfusion-free"]
+    conflicts_with: []
+    tags: ["streaming", "recording"]
+    status: optional
+    impact: medium
+    install_order: 50
+
+  - id: kde-multimedia
+    label: Install KDE media apps
+    description: Add media apps and codecs for KDE desktop users.
+    command: sudo dnf install -y kdenlive dragonplayer elisa-player
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: ["rpmfusion-free"]
+    conflicts_with: []
+    tags: ["kde", "multimedia"]
+    status: optional
+    impact: medium
+    install_order: 60
+
+  - id: spotify
+    label: Install Spotify
+    description: Install the Spotify desktop client for streaming music.
+    command: sudo dnf config-manager --add-repo=https://negativo17.org/repos/fedora-spotify.repo && sudo dnf install -y spotify-client
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: ["rpmfusion-free"]
+    conflicts_with: []
+    tags: ["music", "apps"]
+    status: optional
+    impact: low
+    install_order: 70
+
+  - id: libreoffice
+    label: Install LibreOffice
+    description: Add office productivity tools for working with documents and spreadsheets.
+    command: sudo dnf install -y libreoffice
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["office", "productivity"]
+    status: recommended
+    impact: medium
+    install_order: 80
+
+  - id: adobe-reader
+    label: Install Adobe Reader alternatives
+    description: Install the Evince document viewer for PDF files.
+    command: sudo dnf install -y evince
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["office", "pdf"]
+    status: optional
+    impact: low
+    install_order: 90
+
+  - id: handbrake
+    label: Install HandBrake
+    description: Transcode video files for backups and device compatibility.
+    command: sudo dnf install -y handbrake
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: ["rpmfusion-free"]
+    conflicts_with: []
+    tags: ["media", "transcode"]
+    status: optional
+    impact: low
+    install_order: 100
