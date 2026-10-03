@@ -6,6 +6,8 @@ A lightweight static web app for generating a custom Fedora setup script.
 
 The app lets you choose from curated Fedora workstation packages, media tools, development environments and system tweaks. It then generates a downloadable Bash script you can run locally on a Fedora system.
 
+Setup options start unselected. Use **Select recommended** to include recommended options or choose items individually before generating the script.
+
 ## Project structure
 
 - `config/` — YAML definitions for packages and system changes.

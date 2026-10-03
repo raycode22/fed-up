@@ -6,6 +6,7 @@ const state = {
 const categoryList = document.getElementById('category-list');
 const itemCount = document.getElementById('item-count');
 const scriptPreview = document.getElementById('script-preview');
+const selectRecommendedButton = document.getElementById('select-recommended');
 const selectAllButton = document.getElementById('select-all');
 const copyButton = document.getElementById('copy-script');
 const copyStatus = document.getElementById('copy-status');
@@ -16,64 +17,14 @@ const themeToggle = document.getElementById('theme-toggle');
 const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
 const TRACKING_FILE = '/var/lib/fed-up/installed-packages';
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const ITEM_MARKS = {
-  'rpmfusion-free': 'RPM',
-  'rpmfusion-nonfree': 'RPM+',
-  'fedora-copr': 'COPR',
-  'faster-dnf': 'DNF',
-  'exclude-fedora-updates-testing': '🧪',
-  'dnf-automatic': '↻',
-  'gnome-tweaks': 'GNOME',
-  'gnome-extensions-app': 'GN+',
-  'firewall-default': '🛡️',
-  timeshift: 'TS',
-  flatpak: 'FLAT',
-  'google-chrome': 'CHRM',
-  vlc: 'VLC',
-  ffmpeg: 'FF',
-  'gstreamer-plugins': 'GST',
-  steam: 'STEAM',
-  'obs-studio': 'OBS',
-  'kde-multimedia': 'KDE',
-  spotify: 'SPOT',
-  libreoffice: 'LIBRE',
-  'adobe-reader': 'PDF',
-  handbrake: 'HB',
-  zsh: 'ZSH',
-  'power-profiles-daemon': '⚡',
-  tlp: 'TLP',
-  'ntfs-support': '💾',
-  virtualbox: 'VBOX',
-  'libreoffice-fonts': 'Aa',
-  'firewall-cockpit': 'CKPT',
-  criu: 'CRIU',
-  git: 'GIT',
-  gh: 'GH',
-  'python-tools': 'PY',
-  nodejs: 'NODE',
-  'java-jdk': 'JAVA',
-  rust: 'RUST',
-  docker: 'DOCKER',
-  kubectl: 'K8S',
-  ansible: 'ANS',
-  terraform: 'TF',
-  'postgresql-client': 'PG',
-  'sqlite-tools': 'SQL',
-};
-const ITEM_ICON_IDS = new Set([
-  'exclude-fedora-updates-testing',
-  'dnf-automatic',
-  'firewall-default',
-  'power-profiles-daemon',
-  'ntfs-support',
-]);
 const CATEGORY_ICON_PATHS = {
   dnf: ['M4 7 12 3l8 4-8 4-8-4Z', 'M4 7v10l8 4 8-4V7', 'M12 11v10', 'M8 5l8 4'],
   multimedia: ['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z', 'm10 8 6 4-6 4V8Z'],
   tweaks: [
-    'M12 3v2m0 14v2m9-9h-2M5 12H3m15.36-6.36-1.42 1.42M7.06 16.94l-1.42 1.42m12.72 0-1.42-1.42M7.06 7.06 5.64 5.64',
-    'M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z',
-    'M19 12a7 7 0 0 0-.08-1l1.55-1.2-1.5-2.6-1.86.62a7 7 0 0 0-1.73-1L15.1 5h-3l-.28 1.82a7 7 0 0 0-1.73 1l-1.86-.62-1.5 2.6L8.28 11a7 7 0 0 0 0 2l-1.55 1.2 1.5 2.6 1.86-.62a7 7 0 0 0 1.73 1L12.1 19h3l.28-1.82a7 7 0 0 0 1.73-1l1.86.62 1.5-2.6L18.92 13a7 7 0 0 0 .08-1Z',
+    'M10 2h4l.7 2.1a8 8 0 0 1 1.6.9l2.1-.7 2 3.4-1.4 1.7a8 8 0 0 1 0 1.8l1.4 1.7-2 3.4-2.1-.7a8 8 0 0 1-1.6.9L14 18h-4l-.7-2.1a8 8 0 0 1-1.6-.9l-2.1.7-2-3.4L5 10.6a8 8 0 0 1 0-1.8L3.6 7.1l2-3.4 2.1.7a8 8 0 0 1 1.6-.9L10 2Z',
+    'M12 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z',
+    'M17 13.5v1.1l-.8.5-.8-.3-.6.4-.2.8h-1.2l-.2-.8-.6-.4-.8.3-.8-.8.3-.8-.4-.6-.8-.2v-1.2l.8-.2.4-.6-.3-.8.8-.8.8.3.6-.4.2-.8h1.2l.2.8.6.4.8-.3.8.8-.3.8.4.6.8.2v1.2l-.8.2-.4.6.3.8',
+    'M14 12.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z',
   ],
   development: ['m8 8-4 4 4 4', 'm16 8 4 4-4 4', 'm14 5-4 14'],
 };
@@ -125,16 +76,6 @@ themeToggle.addEventListener('click', () => {
   updateThemeToggle(nextTheme);
 });
 
-function getDefaultSelectedItems(categories) {
-  return new Set(
-    categories.flatMap((category) =>
-      category.items
-        .filter((item) => item.status === 'recommended')
-        .map((item) => item.id),
-    ),
-  );
-}
-
 async function loadData() {
   const response = await fetch('./data.json');
   if (!response.ok) {
@@ -147,7 +88,7 @@ async function loadData() {
   }
 
   state.categories = payload.categories;
-  state.selected = getDefaultSelectedItems(state.categories);
+  state.selected = new Set();
   renderCategories();
 }
 
@@ -201,16 +142,6 @@ function renderCategories() {
       const checkbox = itemElement.querySelector('input');
       checkbox.dataset.id = item.id;
       checkbox.checked = state.selected.has(item.id);
-      const itemMark = itemElement.querySelector('.item-mark');
-      itemMark.textContent =
-        ITEM_MARKS[item.id] ??
-        item.label
-          .split(/\s+/)
-          .slice(0, 2)
-          .map((word) => word[0])
-          .join('')
-          .toUpperCase();
-      itemMark.classList.toggle('item-mark-icon', ITEM_ICON_IDS.has(item.id));
       itemElement.querySelector('.item-title').textContent = item.label;
       itemElement.querySelector('.item-desc').textContent = item.description;
       itemElement.querySelector('.tag').textContent = item.impact;
@@ -357,6 +288,15 @@ function updateView() {
   itemCount.textContent = `${selectedCount} of ${totalCount} selected`;
   selectAllButton.textContent =
     selectedCount === totalCount ? 'Clear selection' : 'Select all';
+  const recommendedItems = state.categories.flatMap((category) =>
+    category.items.filter((item) => item.status === 'recommended'),
+  );
+  const allRecommendedSelected = recommendedItems.every((item) =>
+    state.selected.has(item.id),
+  );
+  selectRecommendedButton.querySelector('span').textContent = allRecommendedSelected
+    ? 'Deselect recommended'
+    : 'Select recommended';
   const mode = SCRIPT_MODES[scriptMode];
   scriptHeading.textContent = mode.title;
   scriptDescription.textContent = mode.description;
@@ -400,6 +340,32 @@ categoryList.addEventListener('click', (event) => {
     } else {
       state.selected.delete(checkbox.dataset.id);
     }
+  }
+  updateView();
+});
+
+selectRecommendedButton.addEventListener('click', () => {
+  const recommendedItems = state.categories.flatMap((category) =>
+    category.items.filter((item) => item.status === 'recommended'),
+  );
+  const allRecommendedSelected = recommendedItems.every((item) =>
+    state.selected.has(item.id),
+  );
+
+  for (const category of state.categories) {
+    for (const item of category.items) {
+      if (item.status === 'recommended') {
+        if (allRecommendedSelected) {
+          state.selected.delete(item.id);
+        } else {
+          state.selected.add(item.id);
+        }
+      }
+    }
+  }
+
+  for (const checkbox of categoryList.querySelectorAll('input[type="checkbox"]')) {
+    checkbox.checked = state.selected.has(checkbox.dataset.id);
   }
   updateView();
 });
