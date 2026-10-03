@@ -1,0 +1,223 @@
+:root {
+  --bg: #111827;
+  --panel: #1f2937;
+  --panel-alt: #111827;
+  --card: #0f172a;
+  --border: #374151;
+  --primary: #22c55e;
+  --primary-strong: #16a34a;
+  --accent: #60a5fa;
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+  --warning: #fbbf24;
+  --danger: #f87171;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: linear-gradient(180deg, #0b1120, #111827);
+  color: var(--text);
+}
+
+.container {
+  width: min(1200px, calc(100% - 2rem));
+  margin: 0 auto;
+}
+
+.topbar {
+  padding: 2rem 0 1.25rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(15, 23, 42, 0.8);
+}
+
+.topbar .container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--primary);
+  font-size: 0.75rem;
+  margin: 0 0 0.5rem;
+}
+
+h1, h2, h3, p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 0;
+  font-size: clamp(2rem, 4vw, 2.8rem);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1.3fr 0.9fr;
+  gap: 1rem;
+  padding: 1.5rem 0 2rem;
+}
+
+.panel {
+  background: rgba(17, 24, 39, 0.9);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1rem;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.count-pill {
+  font-size: 0.8rem;
+  color: var(--text);
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(96, 165, 250, 0.15);
+  border: 1px solid rgba(96, 165, 250, 0.35);
+}
+
+.category-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.category-block {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.75);
+  overflow: hidden;
+}
+
+.category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(17, 24, 39, 0.6);
+}
+
+.category-header h3 {
+  margin: 0;
+  font-size: 1.02rem;
+}
+
+.item-list {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.7rem;
+}
+
+.item-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.8rem;
+  align-items: start;
+  padding: 0.75rem 0.8rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.item-row input[type="checkbox"] {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--primary);
+  margin-top: 0.3rem;
+}
+
+.item-text {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.item-title {
+  font-weight: 600;
+}
+
+.item-desc {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.tag {
+  font-size: 0.7rem;
+  color: var(--accent);
+  border: 1px solid rgba(96, 165, 250, 0.35);
+  background: rgba(96, 165, 250, 0.12);
+  border-radius: 999px;
+  padding: 0.2rem 0.5rem;
+}
+
+.primary-btn, .secondary-btn, .inline-toggle {
+  appearance: none;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.primary-btn {
+  background: var(--primary);
+  color: #02110b;
+  padding: 0.72rem 1rem;
+}
+
+.secondary-btn, .inline-toggle {
+  background: rgba(148, 163, 184, 0.08);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 0.66rem 0.9rem;
+}
+
+.primary-btn:hover, .secondary-btn:hover, .inline-toggle:hover {
+  opacity: 0.96;
+  transform: translateY(-1px);
+}
+
+.button-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.script-preview {
+  min-height: 440px;
+  max-height: 70vh;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #020817;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  line-height: 1.5;
+  color: #dbeafe;
+  font-family: "SFMono-Regular", Consolas, monospace;
+}
+
+@media (max-width: 860px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar .container,
+  .panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
