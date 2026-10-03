@@ -46,6 +46,16 @@ const SCRIPT_MODES = {
 };
 let scriptMode = 'setup';
 
+function getDefaultSelectedItems(categories) {
+  return new Set(
+    categories.flatMap((category) =>
+      category.items
+        .filter((item) => item.status === 'recommended')
+        .map((item) => item.id),
+    ),
+  );
+}
+
 async function loadData() {
   const response = await fetch('./data.json');
   if (!response.ok) {
@@ -58,7 +68,7 @@ async function loadData() {
   }
 
   state.categories = payload.categories;
-  state.selected = new Set();
+  state.selected = getDefaultSelectedItems(state.categories);
   renderCategories();
 }
 
@@ -80,6 +90,14 @@ function createCategoryIcon(categoryId) {
   }
 
   return icon;
+}
+
+function renderCategoryStatus(message) {
+  const status = document.createElement('p');
+  status.className = 'category-status';
+  status.setAttribute('role', 'status');
+  status.textContent = message;
+  categoryList.replaceChildren(status);
 }
 
 function renderCategories() {
@@ -347,6 +365,7 @@ document.getElementById('generate-revert').addEventListener('click', () => {
 });
 
 loadData().catch((error) => {
+  renderCategoryStatus(error.message);
   scriptPreview.textContent = error.message;
   copyStatus.textContent = error.message;
 });
