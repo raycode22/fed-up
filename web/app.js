@@ -12,6 +12,8 @@ const copyStatus = document.getElementById('copy-status');
 const scriptHeading = document.getElementById('script-heading');
 const scriptDescription = document.getElementById('script-description');
 const downloadButton = document.getElementById('download-script');
+const themeToggle = document.getElementById('theme-toggle');
+const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
 const TRACKING_FILE = '/var/lib/fed-up/installed-packages';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const ITEM_MARKS = {
@@ -96,6 +98,32 @@ const SCRIPT_MODES = {
   },
 };
 let scriptMode = 'setup';
+
+function updateThemeToggle(theme) {
+  const nextTheme = theme === 'dark' ? 'light' : 'dark';
+  themeToggle.dataset.mode = theme;
+  themeToggle.setAttribute('aria-label', `Switch to ${nextTheme} mode`);
+  themeToggle.title = `Switch to ${nextTheme} mode`;
+}
+
+function getCurrentTheme() {
+  return (
+    document.documentElement.dataset.theme ||
+    (systemTheme.matches ? 'dark' : 'light')
+  );
+}
+
+updateThemeToggle(getCurrentTheme());
+systemTheme.addEventListener('change', () => {
+  if (!document.documentElement.dataset.theme) {
+    updateThemeToggle(getCurrentTheme());
+  }
+});
+themeToggle.addEventListener('click', () => {
+  const nextTheme = getCurrentTheme() === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = nextTheme;
+  updateThemeToggle(nextTheme);
+});
 
 function getDefaultSelectedItems(categories) {
   return new Set(
