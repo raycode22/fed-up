@@ -1,53 +1,106 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Fedora Setup Generator</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#2D3142" />
+    <meta
+      name="description"
+      content="Choose Fedora setup options and build a custom system setup shell script."
+    />
+    <title>Fed-up | Fedora Linux Setup Script Builder</title>
     <link rel="stylesheet" href="style.css" />
+    <script src="app.js" defer></script>
   </head>
   <body>
-    <header class="topbar">
-      <div class="container">
-        <div>
-          <p class="eyebrow">Fedora Automation Tool</p>
-          <h1>Build your Fedora workstation</h1>
-        </div>
-        <button id="select-all" class="secondary-btn" type="button">Select all</button>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <header class="site-header">
+      <div class="container header-content">
+        <a class="brand" href="#top" aria-label="Fed-up home">Fed-up</a>
+        <details class="site-navigation" open>
+          <summary>Navigation</summary>
+          <nav aria-label="Main navigation">
+            <a href="#setup">Setup options</a>
+            <a href="#script">Generated script</a>
+          </nav>
+        </details>
+      </div>
+      <div class="container intro" id="top">
+        <p class="eyebrow">Make Fedora yours</p>
+        <h1>Fed-up</h1>
+        <h2>System Setup Shell Script Builder for Fedora Linux</h2>
+        <p class="intro-copy">
+          Choose the tools and settings you need, then download a setup script to run on your
+          Fedora workstation.
+        </p>
       </div>
     </header>
 
-    <main class="container layout">
-      <section class="panel left-panel">
-        <div class="panel-header">
-          <h2>Available setup items</h2>
-          <span id="item-count" class="count-pill">0 selected</span>
-        </div>
-        <div id="category-list" class="category-list"></div>
-      </section>
-
-      <aside class="panel right-panel">
-        <div class="panel-header">
-          <h2>Generated script</h2>
-          <div class="button-row">
-            <button id="copy-script" class="secondary-btn" type="button">Copy</button>
-            <button id="download-script" class="primary-btn" type="button">Download .sh</button>
+    <main class="container page-content" id="main-content">
+      <section class="panel setup-panel" id="setup" aria-labelledby="setup-heading">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Configure</p>
+            <h2 id="setup-heading">Setup options</h2>
+          </div>
+          <div class="selection-controls">
+            <output id="item-count" class="count-pill" aria-live="polite">0 selected</output>
+            <button id="select-all" class="button button-secondary" type="button">Clear selection</button>
           </div>
         </div>
-        <pre id="script-preview" class="script-preview"></pre>
-      </aside>
+        <section id="category-list" class="category-list" aria-label="Setup categories"></section>
+      </section>
+
+      <article class="panel script-panel" id="script" aria-labelledby="script-heading">
+        <div class="panel-heading script-heading">
+          <div>
+            <p class="eyebrow">Your result</p>
+            <h2 id="script-heading">Generated script</h2>
+          </div>
+          <div class="button-row">
+            <button id="copy-script" class="button button-secondary" type="button">Copy</button>
+            <button id="download-script" class="button button-primary" type="button">Download .sh</button>
+          </div>
+        </div>
+        <p id="copy-status" class="visually-hidden" role="status" aria-live="polite"></p>
+        <pre id="script-preview" class="script-preview" aria-label="Generated shell script"></pre>
+      </article>
     </main>
 
+    <footer class="site-footer">
+      <div class="container">
+        <p>Fed-up · Fedora Linux setup script builder</p>
+      </div>
+    </footer>
+
     <template id="category-template">
-      <section class="category-block">
-        <div class="category-header">
+      <details class="category-block">
+        <summary class="category-header">
           <h3></h3>
-          <button type="button" class="inline-toggle">Toggle all</button>
+          <span class="category-hint">Show setup items</span>
+        </summary>
+        <div class="category-content">
+          <div class="category-actions">
+            <span class="category-item-count"></span>
+            <button type="button" class="button button-tertiary inline-toggle">Toggle all</button>
+          </div>
+          <ul class="item-list"></ul>
         </div>
-        <div class="item-list"></div>
-      </section>
+      </details>
     </template>
 
-    <script src="app.js"></script>
+    <template id="item-template">
+      <li>
+        <label class="item-row">
+          <input type="checkbox" />
+          <span class="item-text">
+            <span class="item-title"></span>
+            <span class="item-desc"></span>
+          </span>
+          <span class="tag"></span>
+        </label>
+      </li>
+    </template>
   </body>
 </html>
