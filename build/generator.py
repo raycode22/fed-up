@@ -5,9 +5,17 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 
+CATEGORY_ORDER = ("dnf", "multimedia", "tweaks", "development")
+
+
 def build_data_payload(configs: List[Dict[str, Any]]) -> Dict[str, Any]:
     categories = []
-    for config in configs:
+    for config in sorted(
+        configs,
+        key=lambda entry: CATEGORY_ORDER.index(entry["category"])
+        if entry["category"] in CATEGORY_ORDER
+        else len(CATEGORY_ORDER),
+    ):
         category = {
             "category": config["category"],
             "label": config["label"],
