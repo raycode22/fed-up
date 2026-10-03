@@ -50,19 +50,50 @@
           </div>
         </div>
         <section id="category-list" class="category-list" aria-label="Setup categories"></section>
+
+        <section class="maintenance-card" aria-labelledby="maintenance-heading">
+          <div class="maintenance-copy">
+            <p class="eyebrow">After setup</p>
+            <h2 id="maintenance-heading">System cleanup &amp; revert</h2>
+            <p>
+              Generate a Fedora cache cleanup script or a review-before-removal rollback for
+              RPM packages newly installed by current Fed-up setup scripts. Neither option
+              removes personal files.
+            </p>
+          </div>
+          <div class="maintenance-actions">
+            <button id="generate-cleanup" class="button button-secondary" type="button">
+              Generate cleanup script
+            </button>
+            <button id="generate-revert" class="button button-secondary" type="button">
+              Generate Fed-up revert script
+            </button>
+          </div>
+          <p class="maintenance-note">
+            Cleanup runs <code>dnf clean all</code> and offers DNF's interactive
+            <code>autoremove</code> proposal for your review; DNF may include dependencies
+            unrelated to Fed-up, so cancel if unsure. Revert only targets tracked RPM packages;
+            Earlier setup scripts did not create a revert manifest. Revert leaves repositories,
+            system settings, Flatpaks, and user data unchanged.
+          </p>
+        </section>
       </section>
 
       <article class="panel script-panel" id="script" aria-labelledby="script-heading">
         <div class="panel-heading script-heading">
           <div>
             <p class="eyebrow">Your result</p>
-            <h2 id="script-heading">Generated script</h2>
+            <h2 id="script-heading">Generated setup script</h2>
           </div>
           <div class="button-row">
             <button id="copy-script" class="button button-secondary" type="button">Copy</button>
             <button id="download-script" class="button button-primary" type="button">Download .sh</button>
           </div>
         </div>
+        <p id="script-description" class="script-description">
+          Select setup items to customize the script. New RPM packages installed by this script
+          are recorded for the Fed-up revert option.
+        </p>
         <p id="copy-status" class="visually-hidden" role="status" aria-live="polite"></p>
         <pre id="script-preview" class="script-preview" aria-label="Generated shell script"></pre>
       </article>
