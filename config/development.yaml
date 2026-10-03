@@ -1,5 +1,5 @@
 category: development
-label: Development tools
+label: Development Tools
 items:
   - id: git
     label: Install Git
