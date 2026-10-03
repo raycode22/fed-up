@@ -1,0 +1,106 @@
+category: tweaks
+label: System tweaks
+items:
+  - id: zsh
+    label: Install Zsh
+    description: Install Zsh and make it available as a default shell.
+    command: sudo dnf install -y zsh && chsh -s $(which zsh)
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["shell", "user-experience"]
+    status: optional
+    impact: low
+    install_order: 10
+
+  - id: power-profiles-daemon
+    label: Enable performance profiles
+    description: Install the power-profiles-daemon for better laptop tuning.
+    command: sudo dnf install -y power-profiles-daemon && sudo systemctl enable --now power-profiles-daemon
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["performance", "battery"]
+    status: recommended
+    impact: low
+    install_order: 20
+
+  - id: tlp
+    label: Install TLP
+    description: Add TLP to optimize laptop battery life and performance.
+    command: sudo dnf install -y tlp tlp-rdw && sudo systemctl enable --now tlp
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: ["power-profiles-daemon"]
+    tags: ["power", "battery"]
+    status: optional
+    impact: low
+    install_order: 30
+
+  - id: ntfs-support
+    label: Install NTFS support
+    description: Add the NTFS tools needed to read and write Windows disks.
+    command: sudo dnf install -y ntfs-3g
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["filesystem", "compatibility"]
+    status: optional
+    impact: low
+    install_order: 40
+
+  - id: virtualbox
+    label: Install VirtualBox
+    description: Add VirtualBox for local virtual machine experimentation.
+    command: sudo dnf install -y VirtualBox
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["virtualization", "vm"]
+    status: optional
+    impact: medium
+    install_order: 50
+
+  - id: libreoffice-fonts
+    label: Install extra fonts
+    description: Install Microsoft-compatible fonts and extra European scripts.
+    command: sudo dnf install -y adobe-source-code-pro-fonts dejavu-fonts-all liberation-fonts
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["fonts", "ui"]
+    status: optional
+    impact: low
+    install_order: 60
+
+  - id: firewall-cockpit
+    label: Install Cockpit
+    description: Add Cockpit, a browser-based system administration tool.
+    command: sudo dnf install -y cockpit && sudo systemctl enable --now cockpit.socket
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["admin", "monitoring"]
+    status: optional
+    impact: medium
+    install_order: 70
+
+  - id: criu
+    label: Install CRIU support
+    description: Add checkpoint/restore tooling for advanced container workflows.
+    command: sudo dnf install -y criu
+    requires_sudo: true
+    tested_fedora: ["39", "40", "41"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["containers", "advanced"]
+    status: optional
+    impact: low
+    install_order: 80
