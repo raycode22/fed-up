@@ -210,8 +210,30 @@ h3 {
   cursor: pointer;
 }
 
-.theme-toggle:hover {
+.github-link {
+  display: grid;
+  flex: 0 0 2.65rem;
+  width: 2.65rem;
+  height: 2.65rem;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 40%);
+  border-radius: 0.5rem;
+  color: #ffffff;
+}
+
+.theme-toggle:hover,
+.github-link:hover {
   background: rgb(255 255 255 / 12%);
+}
+
+.github-link svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
 }
 
 .theme-toggle svg {
@@ -320,6 +342,23 @@ h3 {
   border-radius: 0.4rem;
   color: var(--text);
   text-decoration: none;
+}
+
+.setup-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.setup-nav-link svg {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
 }
 
 .site-navigation nav a:hover {
@@ -461,8 +500,8 @@ h3 {
 
 .category-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
-  align-items: start;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  align-items: stretch;
   gap: 0.85rem;
 }
 
