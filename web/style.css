@@ -903,16 +903,93 @@ h3 {
 
 .site-footer {
   grid-area: footer;
-  padding-block: 1.5rem;
+  padding-block: 1rem;
   border-block-start: 1px solid var(--border);
   background: var(--surface);
   color: var(--muted);
   font-size: 0.85rem;
-  text-align: center;
 }
 
-.site-footer p {
+.site-footer-content,
+.footer-credits,
+.footer-author {
+  display: flex;
+  align-items: center;
+}
+
+.site-footer-content {
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+}
+
+.footer-brand {
   margin: 0;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.footer-credits {
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.footer-credits li {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.footer-credit-icon {
+  width: 1.2rem;
+  height: 1.2rem;
+  flex: 0 0 auto;
+  color: var(--text);
+}
+
+.copilot-icon {
+  fill: currentColor;
+}
+
+.pages-icon {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.footer-author img {
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.site-footer a {
+  color: var(--accent-strong);
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.site-footer a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 40rem) {
+  .site-footer-content,
+  .footer-credits {
+    justify-content: center;
+  }
+
+  .footer-brand {
+    flex-basis: 100%;
+    text-align: center;
+  }
 }
 
 .visually-hidden {
