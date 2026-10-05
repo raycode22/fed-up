@@ -25,7 +25,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme]) {
     color-scheme: dark;
     --base-strong: #e3e6f3;
     --accent: #aebcf2;
@@ -45,27 +45,6 @@
     --caution-text: #ffe4b5;
     --shadow: 0 0.75rem 2rem rgb(0 0 0 / 18%);
   }
-}
-
-:root[data-theme="light"] {
-  color-scheme: light;
-  --base-strong: #202331;
-  --accent: #5167a8;
-  --accent-strong: #3e508b;
-  --on-accent: #ffffff;
-  --surface: #ffffff;
-  --surface-muted: #f2f3f7;
-  --page: #f7f8fa;
-  --border: #d9dce5;
-  --text: #252938;
-  --muted: #606678;
-  --focus: #a34800;
-  --success: #16723b;
-  --code-bg: #202331;
-  --caution-bg: #fff2d8;
-  --caution-border: #b45b00;
-  --caution-text: #603000;
-  --shadow: 0 0.75rem 2rem rgb(45 49 66 / 7%);
 }
 
 :root[data-theme="dark"] {
@@ -105,6 +84,17 @@ body {
   color: var(--text);
   font-size: clamp(1rem, 0.96rem + 0.2vw, 1.1rem);
   line-height: 1.6;
+}
+
+.app-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "navbar"
+    "header"
+    "content"
+    "script"
+    "footer";
 }
 
 button,
@@ -179,7 +169,15 @@ h3 {
 }
 
 .site-header {
+  grid-area: header;
   padding-block: 1rem clamp(2.5rem, 6vw, 5rem);
+  background: var(--base);
+  color: #ffffff;
+}
+
+.site-nav-bar {
+  grid-area: navbar;
+  padding-block: 0.5rem;
   background: var(--base);
   color: #ffffff;
 }
@@ -240,11 +238,33 @@ h3 {
 }
 
 .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
   color: #ffffff;
   font-size: 1.35rem;
   font-weight: 800;
   letter-spacing: -0.04em;
   text-decoration: none;
+}
+
+.brand-icon {
+  display: block;
+  width: 2.25rem;
+  height: 2.25rem;
+  background-color: currentColor;
+  -webkit-mask: url("assets/logo/Base_fed_up_icon.svg") center / contain no-repeat;
+  mask: url("assets/logo/Base_fed_up_icon.svg") center / contain no-repeat;
+}
+
+:root[data-theme="dark"] .brand {
+  color: var(--text);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .brand {
+    color: var(--text);
+  }
 }
 
 .site-navigation {
@@ -386,8 +406,9 @@ h3 {
 }
 
 .page-content {
+  grid-area: content;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 29rem), 1fr));
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: clamp(1rem, 2vw, 1.5rem);
   padding-block: clamp(1.25rem, 4vw, 3rem);
@@ -400,6 +421,10 @@ h3 {
   border-radius: 0.5rem;
   background: var(--surface);
   box-shadow: var(--shadow);
+}
+
+.setup-panel {
+  padding-inline: clamp(1.5rem, 3vw, 3rem);
 }
 
 .panel-heading {
@@ -736,6 +761,30 @@ h3 {
   overflow-wrap: anywhere;
 }
 
+.script-panel {
+  grid-area: script;
+}
+
+.script-token-comment {
+  color: #aab5ce;
+}
+
+.script-token-string {
+  color: #a5e6b0;
+}
+
+.script-token-variable {
+  color: #ffc46b;
+}
+
+.script-token-keyword {
+  color: #d0b5ff;
+}
+
+.script-token-command {
+  color: #84d6ff;
+}
+
 .script-description {
   margin-block: -0.5rem 0.85rem;
 }
@@ -836,8 +885,10 @@ h3 {
 }
 
 .site-footer {
+  grid-area: footer;
   padding-block: 1.5rem;
   border-block-start: 1px solid var(--border);
+  background: var(--surface);
   color: var(--muted);
   font-size: 0.85rem;
   text-align: center;
@@ -875,8 +926,50 @@ h3 {
     text-decoration: none;
   }
 
+  .desktop-navigation a[href="#script"] {
+    display: none;
+  }
+
   .desktop-navigation a:hover {
     background: rgb(255 255 255 / 12%);
+  }
+}
+
+@media (min-width: 72rem) {
+  .container {
+    width: auto;
+    max-width: none;
+    margin-inline: 0;
+    padding-inline: clamp(2rem, 4vw, 4rem);
+  }
+
+  .app-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(30rem, min(40vw, 46rem));
+    grid-template-areas:
+      "navbar navbar"
+      "header script"
+      "content script"
+      "footer footer";
+    align-items: stretch;
+  }
+
+  .script-panel {
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    align-self: start;
+    height: calc(100vh - 4rem);
+    min-height: 0;
+    border-block: 0;
+    border-inline-end: 0;
+    border-radius: 0;
+  }
+
+  .script-preview {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
   }
 }
 

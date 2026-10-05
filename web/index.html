@@ -9,15 +9,19 @@
       content="Choose Fedora setup options and build a custom system setup shell script."
     />
     <title>Fed-up | Fedora Linux Setup Script Builder</title>
-    <link rel="stylesheet" href="style.css" />
-    <script src="app.js" defer></script>
+    <link rel="stylesheet" href="style.css?v=2" />
+    <script src="app.js?v=2" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to content</a>
+    <div class="app-layout">
 
-    <header class="site-header">
+    <div class="site-nav-bar">
       <div class="container header-content">
-        <a class="brand" href="#top" aria-label="Fed-up home">Fed-up</a>
+        <a class="brand" href="#top" aria-label="Fed-up home">
+          <span class="brand-icon" aria-hidden="true"></span>
+          <span>Fed-up</span>
+        </a>
         <div class="header-actions">
           <details class="site-navigation mobile-navigation">
             <summary>
@@ -52,6 +56,9 @@
           </button>
         </div>
       </div>
+    </div>
+
+    <header class="site-header">
       <div class="container intro" id="top">
         <p class="eyebrow">Make Fedora yours</p>
         <h1>Fed-up</h1>
@@ -143,25 +150,6 @@
         </article>
       </section>
 
-      <article class="panel script-panel" id="script" aria-labelledby="script-heading">
-        <div class="panel-heading script-heading">
-          <div>
-            <p class="eyebrow">Your result</p>
-            <h2 id="script-heading">Generated setup script</h2>
-          </div>
-          <div class="button-row">
-            <button id="copy-script" class="button button-secondary" type="button">Copy</button>
-            <button id="download-script" class="button button-primary" type="button">Download .sh</button>
-          </div>
-        </div>
-        <p id="script-description" class="script-description">
-          Select setup items to customize the script. New RPM packages installed by this script
-          are recorded for the Fed-up revert option.
-        </p>
-        <p id="copy-status" class="visually-hidden" role="status" aria-live="polite"></p>
-        <pre id="script-preview" class="script-preview" aria-label="Generated shell script"></pre>
-      </article>
-
       <section class="fedora-invite" aria-labelledby="fedora-invite-heading">
         <div class="fedora-invite-heading">
           <p class="eyebrow">New to Fedora?</p>
@@ -211,11 +199,32 @@
       </section>
     </main>
 
+    <article class="panel script-panel" id="script" aria-labelledby="script-heading">
+      <div class="panel-heading script-heading">
+        <div>
+          <p class="eyebrow">Your result</p>
+          <h2 id="script-heading">Generated setup script</h2>
+        </div>
+        <div class="button-row">
+          <button id="copy-script" class="button button-secondary" type="button">Copy</button>
+          <button id="download-script" class="button button-primary" type="button">Download .sh</button>
+        </div>
+      </div>
+      <p id="script-description" class="script-description">
+        Select setup items to customize the script. New RPM packages installed by this script
+        are recorded for the Fed-up revert option.
+      </p>
+      <p id="copy-status" class="visually-hidden" role="status" aria-live="polite"></p>
+      <pre id="script-preview" class="script-preview" aria-label="Generated shell script"></pre>
+    </article>
+
     <footer class="site-footer">
       <div class="container">
         <p>Fed-up · Fedora Linux setup script builder</p>
       </div>
     </footer>
+
+    </div>
 
     <template id="category-template">
       <details class="category-block">

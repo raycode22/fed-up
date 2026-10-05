@@ -38,6 +38,7 @@ def test_generated_json_matches_schema() -> None:
         "System Tweaks",
         "Development Tools",
     ]
+    assert Path("web/assets/logo/Base_fed_up_icon.svg").is_file()
 
 
 def test_zsh_install_uses_noninteractive_shell_change() -> None:
