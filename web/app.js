@@ -161,6 +161,29 @@ function getSelectedItems() {
   );
 }
 
+function getAllItems() {
+  return state.categories.flatMap((category) => category.items);
+}
+
+function getRecommendedItems() {
+  return getAllItems().filter((item) => item.status === 'recommended');
+}
+
+function updateSelection(itemIds, selected) {
+  for (const itemId of itemIds) {
+    if (selected) {
+      state.selected.add(itemId);
+    } else {
+      state.selected.delete(itemId);
+    }
+  }
+
+  for (const checkbox of categoryList.querySelectorAll('input[type="checkbox"]')) {
+    checkbox.checked = state.selected.has(checkbox.dataset.id);
+  }
+  updateView();
+}
+
 function shellQuote(value) {
   return `'${value.replace(/'/g, "'\\''")}'`;
 }
@@ -515,16 +538,11 @@ function renderScriptPreview(script) {
 
 function updateView() {
   const selectedCount = state.selected.size;
-  const totalCount = state.categories.reduce(
-    (total, category) => total + category.items.length,
-    0,
-  );
+  const totalCount = getAllItems().length;
   itemCount.textContent = `${selectedCount} of ${totalCount} selected`;
   selectAllButton.textContent =
     selectedCount === totalCount ? 'Clear selection' : 'Select all';
-  const recommendedItems = state.categories.flatMap((category) =>
-    category.items.filter((item) => item.status === 'recommended'),
-  );
+  const recommendedItems = getRecommendedItems();
   const allRecommendedSelected = recommendedItems.every((item) =>
     state.selected.has(item.id),
   );
@@ -549,12 +567,7 @@ categoryList.addEventListener('change', (event) => {
     return;
   }
 
-  if (checkbox.checked) {
-    state.selected.add(checkbox.dataset.id);
-  } else {
-    state.selected.delete(checkbox.dataset.id);
-  }
-  updateView();
+  updateSelection([checkbox.dataset.id], checkbox.checked);
 });
 
 categoryList.addEventListener('click', (event) => {
@@ -566,64 +579,29 @@ categoryList.addEventListener('click', (event) => {
   const categoryElement = toggleButton.closest('.category-block');
   const checkboxes = categoryElement.querySelectorAll('input[type="checkbox"]');
   const shouldSelect = Array.from(checkboxes).some((checkbox) => !checkbox.checked);
-
-  for (const checkbox of checkboxes) {
-    checkbox.checked = shouldSelect;
-    if (shouldSelect) {
-      state.selected.add(checkbox.dataset.id);
-    } else {
-      state.selected.delete(checkbox.dataset.id);
-    }
-  }
-  updateView();
+  updateSelection(
+    Array.from(checkboxes, (checkbox) => checkbox.dataset.id),
+    shouldSelect,
+  );
 });
 
 selectRecommendedButton.addEventListener('click', () => {
-  const recommendedItems = state.categories.flatMap((category) =>
-    category.items.filter((item) => item.status === 'recommended'),
-  );
+  const recommendedItems = getRecommendedItems();
   const allRecommendedSelected = recommendedItems.every((item) =>
     state.selected.has(item.id),
   );
-
-  for (const category of state.categories) {
-    for (const item of category.items) {
-      if (item.status === 'recommended') {
-        if (allRecommendedSelected) {
-          state.selected.delete(item.id);
-        } else {
-          state.selected.add(item.id);
-        }
-      }
-    }
-  }
-
-  for (const checkbox of categoryList.querySelectorAll('input[type="checkbox"]')) {
-    checkbox.checked = state.selected.has(checkbox.dataset.id);
-  }
-  updateView();
+  updateSelection(
+    recommendedItems.map((item) => item.id),
+    !allRecommendedSelected,
+  );
 });
 
 selectAllButton.addEventListener('click', () => {
-  const totalCount = state.categories.reduce(
-    (total, category) => total + category.items.length,
-    0,
+  const allItems = getAllItems();
+  updateSelection(
+    allItems.map((item) => item.id),
+    state.selected.size !== allItems.length,
   );
-
-  if (state.selected.size === totalCount) {
-    state.selected.clear();
-  } else {
-    for (const category of state.categories) {
-      for (const item of category.items) {
-        state.selected.add(item.id);
-      }
-    }
-  }
-
-  for (const checkbox of categoryList.querySelectorAll('input[type="checkbox"]')) {
-    checkbox.checked = state.selected.has(checkbox.dataset.id);
-  }
-  updateView();
 });
 
 copyButton.addEventListener('click', async () => {
