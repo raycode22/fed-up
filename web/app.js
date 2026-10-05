@@ -478,6 +478,41 @@ function getCurrentScript() {
   return generateScript();
 }
 
+function renderScriptPreview(script) {
+  const fragment = document.createDocumentFragment();
+  const tokens =
+    /#[^\n]*|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\$\{[^}\n]*\}|\$[A-Za-z_][\w]*|\b(?:if|then|else|elif|fi|for|in|do|done|case|esac|function|local|return|exit)\b|\b(?:sudo|dnf|rpm|printf|echo|read|command|flatpak|systemctl|curl|firewall-cmd|usermod)\b/g;
+  let lastIndex = 0;
+
+  for (const match of script.matchAll(tokens)) {
+    const token = match[0];
+    const index = match.index;
+    if (index > lastIndex) {
+      fragment.append(script.slice(lastIndex, index));
+    }
+
+    const tokenClass = token.startsWith('#')
+      ? 'script-token-comment'
+      : token.startsWith('$')
+        ? 'script-token-variable'
+        : token.startsWith('"') || token.startsWith("'")
+          ? 'script-token-string'
+          : /^(if|then|else|elif|fi|for|in|do|done|case|esac|function|local|return|exit)$/.test(
+                token,
+              )
+            ? 'script-token-keyword'
+            : 'script-token-command';
+    const span = document.createElement('span');
+    span.className = tokenClass;
+    span.textContent = token;
+    fragment.append(span);
+    lastIndex = index + token.length;
+  }
+
+  fragment.append(script.slice(lastIndex));
+  scriptPreview.replaceChildren(fragment);
+}
+
 function updateView() {
   const selectedCount = state.selected.size;
   const totalCount = state.categories.reduce(
@@ -500,7 +535,7 @@ function updateView() {
   scriptHeading.textContent = mode.title;
   scriptDescription.textContent = mode.description;
   downloadButton.download = mode.filename;
-  scriptPreview.textContent = getCurrentScript();
+  renderScriptPreview(getCurrentScript());
 }
 
 function setScriptMode(mode) {
@@ -620,6 +655,6 @@ document.getElementById('generate-revert').addEventListener('click', () => {
 
 loadData().catch((error) => {
   renderCategoryStatus(error.message);
-  scriptPreview.textContent = error.message;
+  renderScriptPreview(error.message);
   copyStatus.textContent = error.message;
 });
