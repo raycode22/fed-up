@@ -58,12 +58,15 @@ function updateThemeToggle(theme) {
 }
 
 function getCurrentTheme() {
-  return (
-    document.documentElement.dataset.theme ||
-    (systemTheme.matches ? 'dark' : 'light')
-  );
+  let stored = null;
+  try { stored = localStorage.getItem('fed-up-theme'); } catch (e) {}
+  const base = stored || document.documentElement.dataset.theme || (systemTheme.matches ? 'dark' : 'light');
+  return base;
 }
 
+let storedTheme = null;
+try { storedTheme = localStorage.getItem('fed-up-theme'); } catch (e) {}
+if (storedTheme) document.documentElement.dataset.theme = storedTheme;
 updateThemeToggle(getCurrentTheme());
 systemTheme.addEventListener('change', () => {
   if (!document.documentElement.dataset.theme) {
@@ -73,6 +76,7 @@ systemTheme.addEventListener('change', () => {
 themeToggle.addEventListener('click', () => {
   const nextTheme = getCurrentTheme() === 'dark' ? 'light' : 'dark';
   document.documentElement.dataset.theme = nextTheme;
+  try { localStorage.setItem('fed-up-theme', nextTheme); } catch (e) {}
   updateThemeToggle(nextTheme);
 });
 
