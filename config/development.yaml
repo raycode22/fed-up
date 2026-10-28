@@ -223,3 +223,56 @@ items:
     status: optional
     impact: medium
     install_order: 180
+
+  - id: fwupd
+    label: Install fwupd
+    description: Firmware update daemon for supported hardware.
+    command: sudo dnf5 install -y fwupd
+    requires_sudo: true
+    tested_fedora: ["43", "44"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["hardware", "firmware"]
+    status: optional
+    impact: low
+    install_order: 190
+
+  - id: podman
+    label: Install Podman
+    description: Daemonless container engine (recommended over Docker).
+    command: sudo dnf5 install -y podman podman-compose
+    requires_sudo: true
+    tested_fedora: ["43", "44"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["containers", "podman"]
+    status: recommended
+    impact: medium
+    install_order: 200
+
+  - id: distrobox
+    label: Install Distrobox
+    description: Run any Linux distribution in a container.
+    command: sudo dnf5 install -y distrobox
+    requires_sudo: true
+    tested_fedora: ["43", "44"]
+    depends_on: ["podman"]
+    conflicts_with: []
+    tags: ["containers", "distrobox"]
+    status: optional
+    impact: medium
+    install_order: 210
+
+  - id: snapper
+    label: Install Snapper
+    description: Btrfs snapshot management (requires Btrfs root).
+    command: sudo dnf5 install -y snapper
+    requires_sudo: true
+    tested_fedora: ["43", "44"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["backup", "btrfs"]
+    status: optional
+    impact: medium
+    install_order: 220
+    secure_boot_note: none
