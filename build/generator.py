@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List
-
 
 CATEGORY_ORDER = ("dnf", "multimedia", "tweaks", "development")
 
 
-def build_data_payload(configs: List[Dict[str, Any]]) -> Dict[str, Any]:
+def build_data_payload(configs: List[Dict[str, Any]], metadata: Dict[str, Any] | None = None) -> Dict[str, Any]:
     categories = []
     for config in sorted(
         configs,
@@ -29,6 +29,11 @@ def build_data_payload(configs: List[Dict[str, Any]]) -> Dict[str, Any]:
                 "command": item["command"],
                 "requires_sudo": item["requires_sudo"],
                 "tested_fedora": item["tested_fedora"],
+                "supported_fedora": item.get("supported_fedora", item["tested_fedora"]),
+                "desktops": item.get("desktops", "any"),
+                "arch": item.get("arch", "any"),
+                "kind": item.get("kind", "rpm"),
+                "packages": item.get("packages", []),
                 "depends_on": item["depends_on"],
                 "conflicts_with": item["conflicts_with"],
                 "tags": item["tags"],
@@ -38,10 +43,13 @@ def build_data_payload(configs: List[Dict[str, Any]]) -> Dict[str, Any]:
             })
         categories.append(category)
 
-    return {
-        "generated_at": "",
+    payload = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
         "categories": categories,
     }
+    if metadata:
+        payload["metadata"] = metadata
+    return payload
 
 
 def write_json(payload: Dict[str, Any], output_path: Path) -> None:
