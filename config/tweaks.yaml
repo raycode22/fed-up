@@ -18,7 +18,7 @@ items:
   - id: tlp
     label: Install TLP
     description: Add TLP to optimize laptop battery life and performance.
-    command: sudo dnf5 install -y tlp tlp-rdw && sudo systemctl enable --now tlp
+    command: sudo dnf5 install -y tlp tlp-rdw && (sudo systemctl disable --now tuned 2>/dev/null || true) && sudo systemctl enable --now tlp
     requires_sudo: true
     tested_fedora: ["43", "44"]
     depends_on: []
