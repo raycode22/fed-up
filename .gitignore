@@ -6,3 +6,7 @@ venv/
 web/data.json
 *.md
 !README.md
+!docs/*.md
+!CONTRIBUTING.md
+!CHANGELOG.md
+!LICENSE
