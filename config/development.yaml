@@ -145,3 +145,81 @@ items:
     status: optional
     impact: low
     install_order: 120
+
+  - id: fastfetch
+    label: Install fastfetch
+    description: Display system information in the terminal.
+    command: sudo dnf5 install -y fastfetch
+    requires_sudo: true
+    tested_fedora: ["43", "44"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["cli", "info"]
+    status: optional
+    impact: low
+    install_order: 130
+
+  - id: ripgrep
+    label: Install ripgrep
+    description: Fast recursive search tool.
+    command: sudo dnf5 install -y ripgrep
+    requires_sudo: true
+    tested_fedora: ["43", "44"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["cli", "search"]
+    status: optional
+    impact: low
+    install_order: 140
+
+  - id: bat
+    label: Install bat
+    description: Cat clone with syntax highlighting.
+    command: sudo dnf5 install -y bat
+    requires_sudo: true
+    tested_fedora: ["43", "44"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["cli", "files"]
+    status: optional
+    impact: low
+    install_order: 150
+
+  - id: fd-find
+    label: Install fd
+    description: Fast and user-friendly find alternative.
+    command: sudo dnf5 install -y fd-find
+    requires_sudo: true
+    tested_fedora: ["43", "44"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["cli", "files"]
+    status: optional
+    impact: low
+    install_order: 160
+
+  - id: htop
+    label: Install htop
+    description: Interactive process viewer.
+    command: sudo dnf5 install -y htop
+    requires_sudo: true
+    tested_fedora: ["43", "44"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["cli", "monitoring"]
+    status: optional
+    impact: low
+    install_order: 170
+
+  - id: uv
+    label: Install uv
+    description: Fast Python package and project manager.
+    command: sudo dnf5 install -y uv
+    requires_sudo: true
+    tested_fedora: ["43", "44"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["python", "dev"]
+    status: optional
+    impact: medium
+    install_order: 180

@@ -130,3 +130,29 @@ items:
     status: optional
     impact: low
     install_order: 100
+
+  - id: gamemode
+    label: Install GameMode
+    description: Optimize system performance for games.
+    command: sudo dnf5 install -y gamemode
+    requires_sudo: true
+    tested_fedora: ["43", "44"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["gaming", "performance"]
+    status: optional
+    impact: low
+    install_order: 130
+
+  - id: mangohud
+    label: Install MangoHud
+    description: Vulkan/OpenGL overlay for monitoring.
+    command: sudo dnf5 install -y mangohud
+    requires_sudo: true
+    tested_fedora: ["43", "44"]
+    depends_on: []
+    conflicts_with: []
+    tags: ["gaming", "monitoring"]
+    status: optional
+    impact: low
+    install_order: 140
