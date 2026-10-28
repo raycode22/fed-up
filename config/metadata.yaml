@@ -5,10 +5,10 @@ site:
   version: "1.0.0"
   author: Ray Code
   default_branch: main
-  target_fedora_versions: ["39", "40", "41"]
+  target_fedora_versions: ["43", "44"]
   license: MIT
-  repo_url: https://github.com/yourusername/fedora-automation
-  homepage: https://yourusername.github.io/fedora-automation/
+  repo_url: https://github.com/raycode22/fed-up
+  homepage: https://raycode22.github.io/fed-up/
 
 ui:
   title: Fed-up

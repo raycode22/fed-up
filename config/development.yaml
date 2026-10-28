@@ -4,9 +4,9 @@ items:
   - id: git
     label: Install Git
     description: Add Git for version control and source code management.
-    command: sudo dnf install -y git
+    command: sudo dnf5 install -y git
     requires_sudo: true
-    tested_fedora: ["39", "40", "41"]
+    tested_fedora: ["43", "44"]
     depends_on: []
     conflicts_with: []
     tags: ["git", "version-control"]
@@ -17,9 +17,9 @@ items:
   - id: gh
     label: Install GitHub CLI
     description: Install the GitHub command-line client for managing repositories.
-    command: sudo dnf install -y gh
+    command: sudo dnf5 install -y gh
     requires_sudo: true
-    tested_fedora: ["39", "40", "41"]
+    tested_fedora: ["43", "44"]
     depends_on: ["git"]
     conflicts_with: []
     tags: ["git", "github"]
@@ -30,9 +30,9 @@ items:
   - id: python-tools
     label: Install Python toolchain
     description: Install Python, pip and common command-line utilities.
-    command: sudo dnf install -y python3 python3-pip python3-virtualenv python3-devel
+    command: sudo dnf5 install -y python3 python3-pip python3-virtualenv python3-devel
     requires_sudo: true
-    tested_fedora: ["39", "40", "41"]
+    tested_fedora: ["43", "44"]
     depends_on: []
     conflicts_with: []
     tags: ["python", "dev"]
@@ -43,9 +43,9 @@ items:
   - id: nodejs
     label: Install Node.js
     description: Install Node.js and npm for JavaScript development.
-    command: sudo dnf install -y nodejs npm
+    command: sudo dnf5 install -y nodejs npm
     requires_sudo: true
-    tested_fedora: ["39", "40", "41"]
+    tested_fedora: ["43", "44"]
     depends_on: []
     conflicts_with: []
     tags: ["node", "javascript"]
@@ -56,9 +56,9 @@ items:
   - id: java-jdk
     label: Install Java JDK
     description: Install the OpenJDK runtime and development kit.
-    command: sudo dnf install -y java-latest-openjdk-devel
+    command: sudo dnf5 install -y java-latest-openjdk-devel
     requires_sudo: true
-    tested_fedora: ["39", "40", "41"]
+    tested_fedora: ["43", "44"]
     depends_on: []
     conflicts_with: []
     tags: ["java", "sdk"]
@@ -67,11 +67,12 @@ items:
     install_order: 50
 
   - id: rust
+    kind: remote-script
     label: Install Rust toolchain
     description: Install the Rust compiler and package manager for systems development.
     command: curl https://sh.rustup.rs -sSf | sh -s -- -y
     requires_sudo: false
-    tested_fedora: ["39", "40", "41"]
+    tested_fedora: ["43", "44"]
     depends_on: ["git"]
     conflicts_with: []
     tags: ["rust", "systems"]
@@ -82,9 +83,9 @@ items:
   - id: docker
     label: Install Docker
     description: Add Docker and Docker Compose for container workflows.
-    command: sudo dnf install -y docker docker-compose-plugin && sudo systemctl enable --now docker
+    command: sudo dnf5 install -y docker docker-compose-plugin && sudo systemctl enable --now docker
     requires_sudo: true
-    tested_fedora: ["39", "40", "41"]
+    tested_fedora: ["43", "44"]
     depends_on: []
     conflicts_with: []
     tags: ["containers", "docker"]
@@ -95,9 +96,9 @@ items:
   - id: kubectl
     label: Install Kubernetes tools
     description: Add kubectl and related tooling for Kubernetes development.
-    command: sudo dnf install -y kubectl
+    command: sudo dnf5 install -y kubectl
     requires_sudo: true
-    tested_fedora: ["39", "40", "41"]
+    tested_fedora: ["43", "44"]
     depends_on: []
     conflicts_with: []
     tags: ["kubernetes", "cloud"]
@@ -108,9 +109,9 @@ items:
   - id: ansible
     label: Install Ansible
     description: Add Ansible and related tools for automation projects.
-    command: sudo dnf install -y ansible
+    command: sudo dnf5 install -y ansible
     requires_sudo: true
-    tested_fedora: ["39", "40", "41"]
+    tested_fedora: ["43", "44"]
     depends_on: []
     conflicts_with: []
     tags: ["automation", "devops"]
@@ -118,25 +119,13 @@ items:
     impact: medium
     install_order: 90
 
-  - id: terraform
-    label: Install Terraform
-    description: Install Terraform for infrastructure-as-code workflows.
-    command: sudo dnf install -y terraform
-    requires_sudo: true
-    tested_fedora: ["39", "40", "41"]
-    depends_on: []
-    conflicts_with: []
-    tags: ["cloud", "infrastructure"]
-    status: optional
-    impact: medium
-    install_order: 100
 
   - id: postgresql-client
     label: Install PostgreSQL client
     description: Add psql and related client tooling for local database work.
-    command: sudo dnf install -y postgresql
+    command: sudo dnf5 install -y postgresql
     requires_sudo: true
-    tested_fedora: ["39", "40", "41"]
+    tested_fedora: ["43", "44"]
     depends_on: []
     conflicts_with: []
     tags: ["database", "postgresql"]
@@ -147,9 +136,9 @@ items:
   - id: sqlite-tools
     label: Install SQLite tools
     description: Add SQLite3 and database utilities for lightweight development.
-    command: sudo dnf install -y sqlite sqlite-tools
+    command: sudo dnf5 install -y sqlite sqlite-tools
     requires_sudo: true
-    tested_fedora: ["39", "40", "41"]
+    tested_fedora: ["43", "44"]
     depends_on: []
     conflicts_with: []
     tags: ["database", "sqlite"]
