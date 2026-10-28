@@ -4,9 +4,9 @@ items:
   - id: vlc
     label: Install VLC
     description: Play media files with the popular VLC media player.
-    command: sudo dnf install -y vlc
+    command: sudo dnf5 install -y vlc
     requires_sudo: true
-    tested_fedora: ["39", "40", "41"]
+    tested_fedora: ["43", "44"]
     depends_on: ["rpmfusion-free"]
     conflicts_with: []
     tags: ["media", "player"]
@@ -17,9 +17,9 @@ items:
   - id: ffmpeg
     label: Install FFmpeg
     description: Add the FFmpeg stack for conversion, recording and streaming.
-    command: sudo dnf install -y ffmpeg ffmpeg-devel
+    command: sudo dnf5 install -y ffmpeg ffmpeg-devel --allowerasing
     requires_sudo: true
-    tested_fedora: ["39", "40", "41"]
+    tested_fedora: ["43", "44"]
     depends_on: ["rpmfusion-free"]
     conflicts_with: []
     tags: ["media", "codec"]
@@ -30,9 +30,9 @@ items:
   - id: gstreamer-plugins
     label: Install GStreamer plugins
     description: Add GStreamer codecs and extra media support.
-    command: sudo dnf install -y gstreamer1-plugins-{base,good,bad,ugly} gstreamer1-libav gstreamer1-plugin-openh264
+    command: sudo dnf5 install -y gstreamer1-plugins-{base,good,bad-free,ugly} gstreamer1-plugin-libav gstreamer1-plugin-openh264
     requires_sudo: true
-    tested_fedora: ["39", "40", "41"]
+    tested_fedora: ["43", "44"]
     depends_on: ["rpmfusion-free"]
     conflicts_with: []
     tags: ["media", "codec"]
@@ -43,9 +43,9 @@ items:
   - id: steam
     label: Install Steam
     description: Add Valve's Steam client for gaming.
-    command: sudo dnf install -y steam
+    command: sudo dnf5 install -y steam
     requires_sudo: true
-    tested_fedora: ["39", "40", "41"]
+    tested_fedora: ["43", "44"]
     depends_on: ["rpmfusion-nonfree"]
     conflicts_with: []
     tags: ["gaming", "multimedia"]
@@ -56,9 +56,9 @@ items:
   - id: obs-studio
     label: Install OBS Studio
     description: Record and stream your desktop with OBS.
-    command: sudo dnf install -y obs-studio
+    command: sudo dnf5 install -y obs-studio
     requires_sudo: true
-    tested_fedora: ["39", "40", "41"]
+    tested_fedora: ["43", "44"]
     depends_on: ["rpmfusion-free"]
     conflicts_with: []
     tags: ["streaming", "recording"]
@@ -69,9 +69,9 @@ items:
   - id: kde-multimedia
     label: Install KDE media apps
     description: Add media apps and codecs for KDE desktop users.
-    command: sudo dnf install -y kdenlive dragonplayer elisa-player
+    command: sudo dnf5 install -y kdenlive elisa-player
     requires_sudo: true
-    tested_fedora: ["39", "40", "41"]
+    tested_fedora: ["43", "44"]
     depends_on: ["rpmfusion-free"]
     conflicts_with: []
     tags: ["kde", "multimedia"]
@@ -82,9 +82,9 @@ items:
   - id: spotify
     label: Install Spotify
     description: Install the Spotify desktop client for streaming music.
-    command: sudo dnf config-manager --add-repo=https://negativo17.org/repos/fedora-spotify.repo && sudo dnf install -y spotify-client
+    command: sudo dnf5 config-manager addrepo --from-repofile=https://negativo17.org/repos/fedora-spotify.repo && sudo dnf5 install -y spotify-client
     requires_sudo: true
-    tested_fedora: ["39", "40", "41"]
+    tested_fedora: ["43", "44"]
     depends_on: ["rpmfusion-free"]
     conflicts_with: []
     tags: ["music", "apps"]
@@ -95,9 +95,9 @@ items:
   - id: libreoffice
     label: Install LibreOffice
     description: Add office productivity tools for working with documents and spreadsheets.
-    command: sudo dnf install -y libreoffice
+    command: sudo dnf5 install -y libreoffice
     requires_sudo: true
-    tested_fedora: ["39", "40", "41"]
+    tested_fedora: ["43", "44"]
     depends_on: []
     conflicts_with: []
     tags: ["office", "productivity"]
@@ -108,9 +108,9 @@ items:
   - id: adobe-reader
     label: Install Adobe Reader alternatives
     description: Install the Evince document viewer for PDF files.
-    command: sudo dnf install -y evince
+    command: sudo dnf5 install -y evince
     requires_sudo: true
-    tested_fedora: ["39", "40", "41"]
+    tested_fedora: ["43", "44"]
     depends_on: []
     conflicts_with: []
     tags: ["office", "pdf"]
@@ -121,9 +121,9 @@ items:
   - id: handbrake
     label: Install HandBrake
     description: Transcode video files for backups and device compatibility.
-    command: sudo dnf install -y handbrake
+    command: sudo dnf5 install -y handbrake
     requires_sudo: true
-    tested_fedora: ["39", "40", "41"]
+    tested_fedora: ["43", "44"]
     depends_on: ["rpmfusion-free"]
     conflicts_with: []
     tags: ["media", "transcode"]
