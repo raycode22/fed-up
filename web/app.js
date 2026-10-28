@@ -1,3 +1,5 @@
+import { autoSelectDependencies } from './generator.js';
+
 const state = {
   selected: new Set(),
   categories: [],
@@ -174,12 +176,17 @@ function getRecommendedItems() {
 }
 
 function updateSelection(itemIds, selected) {
-  for (const itemId of itemIds) {
-    if (selected) {
-      state.selected.add(itemId);
-    } else {
-      state.selected.delete(itemId);
+  if (selected) {
+    const allItems = getAllItems();
+    const expanded = new Set(itemIds);
+    for (const id of itemIds) {
+      for (const dep of autoSelectDependencies(allItems, [id])) {
+        expanded.add(dep);
+      }
     }
+    for (const id of expanded) state.selected.add(id);
+  } else {
+    for (const itemId of itemIds) state.selected.delete(itemId);
   }
 
   for (const checkbox of categoryList.querySelectorAll('input[type="checkbox"]')) {
