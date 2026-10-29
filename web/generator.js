@@ -92,6 +92,15 @@ export function filterBySystem(items, { fedora, desktop, arch } = {}) {
   });
 }
 
+export function isRecommended(item, desktop = 'any') {
+  if (!item || item.status !== 'recommended') return false;
+  const recommendedOn = Array.isArray(item.recommended_on)
+    ? item.recommended_on
+    : [item.desktops || 'any'];
+  if (recommendedOn.length === 0) return true;
+  return recommendedOn.includes('any') || recommendedOn.includes(desktop);
+}
+
 export function buildScript(items) {
   const lines = ['#!/usr/bin/env bash', 'set -u', ''];
   for (const item of items) {

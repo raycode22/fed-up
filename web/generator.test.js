@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { shellQuote, topoSort, autoSelectDependencies, hasConflict, filterBySystem } from '../web/generator.js';
+import { shellQuote, topoSort, autoSelectDependencies, hasConflict, filterBySystem, isRecommended } from '../web/generator.js';
 
 test('shellQuote simple', () => {
   assert.equal(shellQuote('abc'), 'abc');
@@ -42,4 +42,12 @@ test('filterBySystem', () => {
   ];
   const r = filterBySystem(items, { fedora: '44', desktop: 'kde', arch: 'aarch64' }).map(i=>i.id);
   assert.deepEqual(r, ['j']);
+});
+
+test('isRecommended desktop-specific', () => {
+  const item = { id: 't', status: 'recommended', desktops: 'gnome', recommended_on: ['gnome'] };
+  assert.equal(isRecommended(item, 'gnome'), true);
+  assert.equal(isRecommended(item, 'kde'), false);
+  const anyItem = { id: 'a', status: 'recommended', desktops: 'any' };
+  assert.equal(isRecommended(anyItem, 'kde'), true);
 });
