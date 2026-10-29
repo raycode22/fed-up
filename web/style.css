@@ -512,6 +512,7 @@ h3 {
 
 .maintenance-card {
   display: grid;
+  grid-template-rows: auto 1fr auto;
   align-content: start;
   justify-items: start;
   gap: 1rem;
@@ -519,6 +520,13 @@ h3 {
   border: 1px solid var(--border);
   border-radius: 0.5rem;
   background: var(--surface-muted);
+  min-height: 12rem;
+}
+
+.maintenance-card .button {
+  align-self: end;
+  justify-self: start;
+  min-width: 12rem;
 }
 
 .maintenance-copy h3 {
@@ -834,8 +842,10 @@ h3 {
 
 .fedora-card {
   display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
   align-content: start;
-  justify-items: start;
+  align-items: center;
   gap: 0.65rem;
   padding: clamp(1rem, 2vw, 1.4rem);
   border: 1px solid var(--border);
@@ -845,9 +855,10 @@ h3 {
 }
 
 .fedora-card > svg {
+  grid-column: 1;
+  grid-row: 1;
   width: 2.5rem;
   height: 2.5rem;
-  margin-block-end: 0.25rem;
   fill: none;
   stroke: var(--accent-strong);
   stroke-linecap: round;
@@ -855,16 +866,25 @@ h3 {
   stroke-width: 2;
 }
 
-.fedora-card h3,
-.fedora-card p {
+.fedora-card h3 {
+  grid-column: 2;
+  grid-row: 1;
   margin-block-end: 0;
 }
 
 .fedora-card p {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  margin-block-end: 0;
   color: var(--muted);
 }
 
-.fedora-card a,
+.fedora-card a {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  font-weight: 750;
+}
+
 .spins-alternative a {
   font-weight: 750;
 }
@@ -1075,3 +1095,37 @@ h3 {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Uniform item cards and sticky controls */
+.item-row {
+  min-height: 5.25rem;
+}
+
+.selection-controls {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+/* Desktop filter control */
+.desktop-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.desktop-filter select {
+  min-height: 2rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+}
+"""
+  background: var(--surface);
+  padding: 0.5rem 0;
+}
+"""
