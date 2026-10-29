@@ -1,8 +1,10 @@
-import { autoSelectDependencies } from './generator.js';
+import { autoSelectDependencies, filterBySystem, isRecommended } from './generator.js';
 
 const state = {
   selected: new Set(),
   categories: [],
+  desktop: 'any',
+  allCategories: [],
 };
 
 const categoryList = document.getElementById('category-list');
@@ -93,7 +95,11 @@ async function loadData() {
     throw new Error('The setup options are not in the expected format.');
   }
 
-  state.categories = payload.categories;
+  state.allCategories = payload.categories;
+  state.categories = state.allCategories.map((category) => ({
+    ...category,
+    items: filterBySystem(category.items, { desktop: state.desktop }),
+  }));
   state.selected = new Set();
   renderCategories();
 }
@@ -172,7 +178,7 @@ function getAllItems() {
 }
 
 function getRecommendedItems() {
-  return getAllItems().filter((item) => item.status === 'recommended');
+  return getAllItems().filter((item) => isRecommended(item, state.desktop));
 }
 
 function updateSelection(itemIds, selected) {
@@ -625,13 +631,10 @@ copyButton.addEventListener('click', async () => {
 });
 
 document.getElementById('download-script').addEventListener('click', () => {
-  const blob = new Blob([getCurrentScript()], { type: 'application/x-shellscript' });
-  const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
-  link.href = url;
-  link.download = SCRIPT_MODES[scriptMode].filename;
+  link.href = './install.sh';
+  link.download = 'fed-up-install.sh';
   link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
 
 document.getElementById('generate-cleanup').addEventListener('click', () => {
@@ -641,6 +644,22 @@ document.getElementById('generate-cleanup').addEventListener('click', () => {
 document.getElementById('generate-revert').addEventListener('click', () => {
   setScriptMode('revert');
 });
+
+const desktopSelect = document.getElementById('desktop-select');
+if (desktopSelect) {
+  desktopSelect.value = state.desktop;
+  desktopSelect.addEventListener('change', () => {
+    state.desktop = desktopSelect.value;
+    if (state.allCategories.length) {
+      state.categories = state.allCategories.map((category) => ({
+        ...category,
+        items: filterBySystem(category.items, { desktop: state.desktop }),
+      }));
+      state.selected = new Set();
+      renderCategories();
+    }
+  });
+}
 
 loadData().catch((error) => {
   renderCategoryStatus(error.message);

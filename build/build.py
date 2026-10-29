@@ -6,9 +6,11 @@ from pathlib import Path
 try:
     from .validator import validate_complete_payload
     from .generator import build_data_payload, write_json
+    from .bootstrapper import build_bootstrapper
 except ImportError:  # pragma: no cover - supports direct script execution
     from validator import validate_complete_payload
     from generator import build_data_payload, write_json
+    from bootstrapper import build_bootstrapper
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:
@@ -42,7 +44,14 @@ def main(args: list[str] | None = None) -> int:
 
     payload = build_data_payload(data["categories"], metadata=metadata)
     write_json(payload, args.output)
+    # Generate embedded TUI bootstrapper next to output
+    bootstrapper_output = args.output.parent / "install.sh"
+    payload_dir = config_dir.parent / "fedup_tui"
+    if not payload_dir.exists():
+        payload_dir = Path("fedup_tui")
+    build_bootstrapper(bootstrapper_output, payload_dir)
     print(f"Generated {args.output} from {len(data['categories'])} config files.")
+    print(f"Generated {bootstrapper_output}.")
     return 0
 
 
