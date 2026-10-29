@@ -73,6 +73,7 @@ items:
     command: sudo dnf5 install -y gnome-tweaks
     requires_sudo: true
     tested_fedora: ["43", "44"]
+    desktops: gnome
     depends_on: []
     conflicts_with: []
     tags: ["desktop", "gnome"]
@@ -86,6 +87,7 @@ items:
     command: sudo dnf5 install -y gnome-extensions-app
     requires_sudo: true
     tested_fedora: ["43", "44"]
+    desktops: gnome
     depends_on: []
     conflicts_with: []
     tags: ["desktop", "gnome"]
