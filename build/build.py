@@ -49,7 +49,8 @@ def main(args: list[str] | None = None) -> int:
     payload_dir = config_dir.parent / "fedup_tui"
     if not payload_dir.exists():
         payload_dir = Path("fedup_tui")
-    build_bootstrapper(bootstrapper_output, payload_dir)
+    data_json_path = args.output
+    build_bootstrapper(bootstrapper_output, payload_dir, data_json_path)
     print(f"Generated {args.output} from {len(data['categories'])} config files.")
     print(f"Generated {bootstrapper_output}.")
     return 0
