@@ -32,6 +32,7 @@ def build_data_payload(configs: List[Dict[str, Any]], metadata: Dict[str, Any] |
                 "supported_fedora": item.get("supported_fedora", item["tested_fedora"]),
                 "desktops": item.get("desktops", "any"),
                 "arch": item.get("arch", "any"),
+                "recommended_on": item.get("recommended_on", ([item.get("desktops", "any")] if item.get("status") == "recommended" else [])),
                 "kind": item.get("kind", "rpm"),
                 "packages": item.get("packages", []),
                 "depends_on": item["depends_on"],
