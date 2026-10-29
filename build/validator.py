@@ -75,6 +75,13 @@ def validate_config(data, source_file):
                 raise ValidationError(f"{source_file} item {item_id}: supported_fedora must be a non-empty list")
         if "desktops" in item and item["desktops"] not in ALLOWED_DESKTOPS:
             raise ValidationError(f"{source_file} item {item_id}: invalid desktops")
+        if "recommended_on" in item:
+            ro = item["recommended_on"]
+            if not isinstance(ro, list) or not ro:
+                raise ValidationError(f"{source_file} item {item_id}: recommended_on must be a non-empty list")
+            for d in ro:
+                if d not in ALLOWED_DESKTOPS:
+                    raise ValidationError(f"{source_file} item {item_id}: invalid recommended_on entry '{d}'")
         if "arch" in item:
             a = item["arch"]
             if isinstance(a, str):
