@@ -30,32 +30,39 @@ def build_bootstrapper(output_path: Path, payload_dir: Path,
         "#!/bin/sh",
         "set -eu",
         "",
-        "echo \"Fed-up bootstrapper\"",
+        'echo "Fed-up bootstrapper"',
         "",
         'if ! command -v python3 >/dev/null 2>&1; then',
         '  echo "python3 is required" >&2',
         "  exit 1",
         "fi",
         "",
-        "TMPDIR=$(mktemp -d)",
-        'trap "rm -rf \"$TMPDIR\"" EXIT INT TERM',
+        "# Install textual if not available",
+        'if ! python3 -c "import textual" 2>/dev/null; then',
+        '  echo "Installing textual..." >&2',
+        '  python3 -m pip install --quiet textual || { echo "Failed to install textual" >&2; exit 1; }',
+        "fi",
         "",
-        "mkdir -p \"$TMPDIR/fedup_tui\"",
-        '# copy the real data.json into the sandbox (much simpler than base64)',
+        "TMPDIR=$(mktemp -d)",
+        'trap "rm -rf "$TMPDIR"" EXIT INT TERM',
+        "",
+        '# copy the Python package and data.json into the sandbox (much simpler than base64)',
+        'mkdir -p "$TMPDIR/fedup_tui"',
+        'cp -r "$(dirname "$0")/../fedup_tui"/* "$TMPDIR/fedup_tui/" 2>/dev/null || true',
         f'cp "{Path("web/data.json").resolve()}" "$TMPDIR/data.json"',
         "",
         "# check for a real terminal before launching the TUI",
         'if [ -t 0 ]; then',
+        '  cd "$TMPDIR"',
         '  exec python3 -m fedup_tui --config "$TMPDIR/data.json"',
         "else",
-        '  echo "Fed-up needs an interactive terminal (or run with \"./install.sh --help\")." >&2',
+        '  echo "Fed-up needs an interactive terminal (or run with "./install.sh --help")." >&2',
         '  exit 2',
         "fi",
         "",
-        '# be nice – clean temp dir on normal exit',
-        'trap "rm -rf \"$TMPDIR\"" EXIT',
+        "# be nice – clean temp dir on normal exit",
+        'trap "rm -rf "$TMPDIR"" EXIT',
     ]
-
     script = "\n".join(script_lines) + "\n"
     output_path.write_text(script, encoding="utf-8")
     os.chmod(output_path, 0o755)
@@ -63,6 +70,26 @@ def build_bootstrapper(output_path: Path, payload_dir: Path,
 
 if __name__ == "__main__":
     import argparse
+    import subprocess
+    import sys
+
+    # Ensure textual is available (install if missing)
+    def ensure_textual():
+        try:
+            import textual
+            return True
+        except ImportError:
+            print("Installing textual...", file=sys.stderr)
+            try:
+                subprocess.run([sys.executable, "-m", "pip", "install", "textual"], check=True)
+                return True
+            except Exception as e:
+                print(f"Failed to install textual: {e}", file=sys.stderr)
+                return False
+
+    if not ensure_textual():
+        sys.exit(1)
+
     parser = argparse.ArgumentParser(description="Fed-up bootstrapper builder")
     parser.add_argument("--output", required=True,
                         help="path for the generated install.sh")
@@ -73,16 +100,10 @@ if __name__ == "__main__":
 
     ns = parser.parse_args()
 
-    if needs_curses():
-        sys.stderr.write("Error: this Python build lacks curses support.\n")
-        sys.exit(1)
-
     data_json_path = Path(ns.data_json)
     if not data_json_path.is_file():
-        sys.stderr.write(f"Error: {data_json_path} not found.\n")
+        sys.stderr.write(f"Error: {data_json_path} not found.\\n")
         sys.exit(1)
 
     build_bootstrapper(Path(ns.output), Path(ns.payload_dir), data_json_path)
     print(f"Generated {ns.output}")
-
-
