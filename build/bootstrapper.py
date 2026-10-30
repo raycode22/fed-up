@@ -1,19 +1,11 @@
 #!/usr/bin/env python3
-"""Build an tiny install.sh that bootstraps the Fed-up curses TUI."""
+"""Build an install.sh that bootstraps the Fed-up Textual TUI."""
 
 import base64
 import json
 import os
 import sys
 from pathlib import Path
-
-
-def needs_curses():
-    try:
-        import curses
-        return False
-    except ImportError:
-        return True
 
 
 def build_bootstrapper(output_path: Path, payload_dir: Path,
