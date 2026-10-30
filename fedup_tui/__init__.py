@@ -1,3 +1,2 @@
-"""Fed-up terminal user interface package (stdlib only)."""
-
-__version__ = "0.1.0"
+"""Fed-up terminal user interface package (Textual-based)."""
+__version__ = "0.2.0"
