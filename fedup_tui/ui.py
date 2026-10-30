@@ -5,15 +5,22 @@ import os
 
 def load_items(args):
     items = []
-    if args.config and os.path.exists(args.config):
+    config_path = args.config
+    if not config_path:
+        if os.path.exists("web/data.json"):
+            config_path = "web/data.json"
+        elif os.path.exists("data.json"):
+            config_path = "data.json"
+    if config_path and os.path.exists(config_path):
         try:
-            with open(args.config) as f:
+            with open(config_path) as f:
                 data = json.load(f)
             for cat in data.get("categories", []):
                 for it in cat.get("items", []):
                     items.append(it)
-        except Exception:
-            pass
+        except Exception as exc:
+            print(f"Warning: could not read config {config_path}: {exc}",
+                   file=__import__("sys").stderr)
     if args.items:
         wanted = set(x.strip() for x in args.items.split(",") if x.strip())
         items = [it for it in items if it.get("id") in wanted]
@@ -76,23 +83,43 @@ def screen_notice(stdscr):
 
 
 def screen_review(stdscr, items):
+    """Allow the user to review and select items with scrolling support."""
     idx = 0
-    selected = set(it["id"] for it in items)
-    while True:
+    selected = set()
+    sh, sw = stdscr.getmaxyx()
+    visible = max(1, sh - 6)
+    start_idx = 0
+
+    def draw():
         stdscr.clear()
         draw_header(stdscr, "Review Items")
-        safe_addstr(stdscr, 4, 2, "Space: toggle  Enter: confirm  q: quit", curses.A_DIM)
-        for i, it in enumerate(items):
+        safe_addstr(stdscr, 4, 2,
+                    "Space: toggle  Enter: confirm  q: quit", curses.A_DIM)
+        end = min(len(items), start_idx + visible)
+        for i in range(start_idx, end):
+            it = items[i]
             mark = "[x]" if it["id"] in selected else "[ ]"
             label = f"{mark} {it.get('label', it['id'])}"
             attr = curses.A_REVERSE if i == idx else 0
-            safe_addstr(stdscr, 6 + i, 2, label, attr)
-        stdscr.refresh()
+            row = 6 + (i - start_idx)
+            try:
+                stdscr.addstr(row, 2, label[: max(0, sw - 4)], attr)
+            except curses.error:
+                pass
+
+    draw()
+    stdscr.refresh()
+
+    while True:
         ch = stdscr.getch()
         if ch == curses.KEY_UP and idx > 0:
             idx -= 1
+            if idx < start_idx:
+                start_idx = max(0, idx)
         elif ch == curses.KEY_DOWN and idx < len(items) - 1:
             idx += 1
+            if idx >= start_idx + visible:
+                start_idx = min(idx - visible + 1, max(0, len(items) - visible))
         elif ch == ord(" "):
             iid = items[idx]["id"]
             if iid in selected:
@@ -104,12 +131,17 @@ def screen_review(stdscr, items):
         elif ch in (ord("q"), ord("Q")):
             return None
 
+        draw()
+        stdscr.refresh()
+
+
 
 def run_ui(args, logger):
     items = load_items(args)
     if not items:
-        # fallback demo items
-        items = [{"id": "demo", "label": "Demo item", "command": ["true"]}]
+        print("Error: no installation items found. Check data.json.",
+              file=__import__("sys").stderr)
+        return 1
 
     def main(stdscr):
         curses.curs_set(0)
