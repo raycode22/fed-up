@@ -5,38 +5,44 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self';" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#2D3142" />
-    <meta
-      name="description"
-      content="Choose Fedora setup options and build a custom system setup shell script."
-    />
+    <meta name="description" content="Choose Fedora setup options and build a custom system setup shell script." />
     <meta property="og:title" content="Fed-up | Fedora Linux Setup Script Builder" />
     <meta property="og:description" content="Generate a personalized Fedora Linux setup script." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary" />
     <title>Fed-up | Fedora Linux Setup Script Builder</title>
     <link rel="icon" type="image/x-icon" href="assets/fed-up.ico" />
-    <link rel="stylesheet" href="style.css?v=7" />
-    <script type="module" src="app.js"></script>
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to content</a>
-    <div class="app-layout">
 
-    <div class="site-nav-bar">
-      <div class="container header-content">
-        <a class="brand" href="#top" aria-label="Fed-up home">
-          <span class="brand-icon" aria-hidden="true"></span>
-          <span>Fed-up</span>
-        </a>
-        <div class="header-actions">
-          <details class="site-navigation mobile-navigation">
-            <summary>
-              <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-              <span>Menu</span>
-            </summary>
-            <nav aria-label="Main navigation">
+    <div class="app-layout">
+      <header class="site-header">
+        <div class="container header-content">
+          <a class="brand" href="#top" aria-label="Fed-up home">
+            <span class="brand-icon" aria-hidden="true"></span>
+            <span>Fed-up</span>
+          </a>
+          <nav class="header-actions">
+            <details class="site-navigation mobile-navigation" aria-label="Main navigation">
+              <summary>
+                <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+                <span>Menu</span>
+              </summary>
+              <nav aria-label="Main navigation">
+                <a class="setup-nav-link" href="#setup">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="m3 6 2 2 3-3m3 1h10M3 12l2 2 3-3m3 1h10M3 18l2 2 3-3m3 1h10" />
+                  </svg>
+                  <span>Setup options</span>
+                </a>
+                <a href="#script">Generated script</a>
+              </nav>
+            </details>
+            <nav class="desktop-navigation" aria-label="Main navigation">
               <a class="setup-nav-link" href="#setup">
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                   <path d="m3 6 2 2 3-3m3 1h10M3 12l2 2 3-3m3 1h10M3 18l2 2 3-3m3 1h10" />
@@ -45,275 +51,148 @@
               </a>
               <a href="#script">Generated script</a>
             </nav>
-          </details>
-          <nav class="desktop-navigation" aria-label="Main navigation">
-            <a class="setup-nav-link" href="#setup">
+            <a
+              class="github-link"
+              href="https://github.com/raycode22/fed-up"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Fed-up on GitHub (opens in a new tab)"
+            >
               <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="m3 6 2 2 3-3m3 1h10M3 12l2 2 3-3m3 1h10M3 18l2 2 3-3m3 1h10" />
+                <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
               </svg>
-              <span>Setup options</span>
             </a>
-            <a href="#script">Generated script</a>
-          </nav>
-          <a
-            class="github-link"
-            href="https://github.com/raycode22/fed-up"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Fed-up on GitHub (opens in a new tab)"
-            title="Fed-up on GitHub"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
-            </svg>
-          </a>
-          <button
-            id="theme-toggle"
-            class="theme-toggle"
-            type="button"
-            aria-label="Switch to dark mode"
-            title="Switch to dark mode"
-          >
-            <svg class="theme-icon-moon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M20.9 13A9 9 0 0 1 11 3.1 9 9 0 1 0 20.9 13Z" />
-            </svg>
-            <svg class="theme-icon-sun" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <circle cx="12" cy="12" r="4" />
-              <path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42" />
-            </svg>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <header class="site-header">
-      <div class="container intro" id="top">
-        <p class="eyebrow">Zero headache</p>
-        <h1>Fed-up</h1>
-        <h2>System Setup Shell Script Builder for Fedora Linux</h2>
-        <p class="intro-copy">
-          Choose the tools and settings you need, then download a setup script to run on your
-          Fedora machine.
-        </p>
-        <aside class="caution-banner" aria-labelledby="caution-heading">
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="M12 3 22 21H2L12 3Z" />
-            <path d="M12 9v5m0 3h.01" />
-          </svg>
-          <div>
-            <h2 id="caution-heading">Before you run a script</h2>
-            <p>
-              Fed-up only builds and downloads scripts; it does not run them. Read the generated
-              commands before running anything with <code>sudo</code>. Cleanup and revert scripts
-              can change installed packages, so review DNF's proposed changes and cancel if unsure.
-            </p>
-          </div>
-        </aside>
-      </div>
-    </header>
-
-    <main class="container page-content" id="main-content">
-      <section class="panel setup-panel" id="setup" aria-labelledby="setup-heading">
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">Configure</p>
-            <h2 id="setup-heading">Setup options</h2>
-          </div>
-          <div class="selection-controls">
-            <output id="item-count" class="count-pill" aria-live="polite">0 selected</output>
-            <label class="desktop-filter">
-              Desktop:
-              <select id="desktop-select">
-                <option value="any">Any</option>
-                <option value="gnome">GNOME</option>
-                <option value="kde">KDE Plasma</option>
-              </select>
-            </label>
-            <button id="select-recommended" class="button button-secondary button-recommended" type="button">
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="m5 12 4 4L19 6" />
-              </svg>
-              <span>Select recommended</span>
+            <button
+              id="theme-toggle"
+              class="theme-toggle"
+              type="button"
+              aria-label="Switch to dark mode"
+              title="Switch to dark mode"
+            >
             </button>
-            <button id="select-all" class="button button-secondary" type="button">Select all</button>
-          </div>
+          </nav>
         </div>
-        <section id="category-list" class="category-list" aria-label="Setup categories">
-          <p class="category-status" role="status" aria-live="polite">Loading setup options...</p>
+      </header>
+
+      <main id="main-content" tabindex="0" role="main">
+        <section class="selection-area" id="setup">
+          <div class="container">
+            <h2>Fedora Post-Install Script Generator</h2>
+            <p class="subtitle">Select post-installation configurations for your Fedora Linux workstation</p>
+
+            <form id="setup-form" aria-labelledby="setup-form-title">
+              <input type="hidden" id="script-mode" value="setup" />
+
+              <div id="category-list">
+                <div class="category-block" data-category="dnf">
+                  <summary class="category-header">
+                    <span class="category-icon" aria-hidden="true"></span>
+                    <h3>Repositories & Codecs</h3>
+                    <span class="category-hint">Show setup items</span>
+                    <button type="button" class="inline-toggle">Toggle all</button>
+                  </summary>
+                  <div class="category-content">
+                    <span class="category-item-count" id="repo-count">0</span>
+                    <ul class="item-list" id="repo-list"></ul>
+                  </div>
+                </div>
+
+                <div class="category-block" data-category="multimedia">
+                  <summary class="category-header">
+                    <span class="category-icon" aria-hidden="true"></span>
+                    <h3>Audio & Video</h3>
+                    <span class="category-hint">Show setup items</span>
+                    <button type="button" class="inline-toggle">Toggle all</button>
+                  </summary>
+                  <div class="category-content">
+                    <span class="category-item-count" id="media-count">0</span>
+                    <ul class="item-list" id="media-list"></ul>
+                  </div>
+                </div>
+
+                <div class="category-block" data-category="development">
+                  <summary class="category-header">
+                    <span class="category-icon" aria-hidden="true"></span>
+                    <h3>Development Tools</h3>
+                    <span class="category-hint">Show setup items</span>
+                    <button type="button" class="inline-toggle">Toggle all</button>
+                  </summary>
+                  <div class="category-content">
+                    <span class="category-item-count" id="dev-count">0</span>
+                    <ul class="item-list" id="dev-list"></ul>
+                  </div>
+                </div>
+
+                <div class="category-block" data-category="tweaks">
+                  <summary class="category-header">
+                    <span class="category-icon" aria-hidden="true"></span>
+                    <h3>System Tweaks</h3>
+                    <span class="category-hint">Show setup items</span>
+                    <button type="button" class="inline-toggle">Toggle all</button>
+                  </summary>
+                  <div class="category-content">
+                    <span class="category-item-count" id="tweak-count">0</span>
+                    <ul class="item-list" id="tweak-list"></ul>
+                  </div>
+                </div>
+              </div>
+
+              <div class="desktop-selector" id="desktop-selector" style="display:none;">
+                <label for="desktop-select" class="visually-hidden">Select desktop environment</label>
+                <select id="desktop-select" class="desktop-select">
+                  <option value="any">Any desktop</option>
+                  <option value="gnome">GNOME</option>
+                  <option value="kde">KDE Plasma</option>
+                  <option value="xfce">XFCE</option>
+                </select>
+              </div>
+            </form>
+          </div>
         </section>
 
-      </section>
+        <section class="script-area" id="script" style="display:none;">
+          <div class="container">
+            <h2>Generated Script</h2>
+            <p class="subtitle">Your custom Fedora post-installation shell script</p>
 
-      <section class="maintenance-tools" aria-labelledby="maintenance-heading">
-        <div class="maintenance-heading">
-          <p class="eyebrow">After setup</p>
-          <h2 id="maintenance-heading">Care for your Fedora system</h2>
-        </div>
-        <article class="maintenance-card" aria-labelledby="cleanup-heading">
-          <div class="maintenance-copy">
-            <h3 id="cleanup-heading" class="maintenance-title">
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M5 3 18 16m-3-3 5 5-5 5-5-5m8 2-3 3m0-6-3 3m0-6-3 3" />
-              </svg>
-              Clean up package caches
-            </h3>
-            <p>
-              Clear DNF caches and review DNF's proposal to remove unused dependencies. It may
-              include packages unrelated to Fed-up, so cancel if unsure.
-            </p>
+            <div class="script-panel">
+              <div class="script-preview" id="script-preview">
+                <p>Make your selections to generate the script.</p>
+              </div>
+
+              <div class="selection-controls">
+                <label for="script-mode" class="visually-hidden">Script mode</label>
+                <select id="script-mode" class="script-mode">
+                  <option value="setup">Setup script (fed-up.sh)</option>
+                  <option value="cleanup">Cleanup script (fedora-cleanup.sh)</option>
+                  <option value="revert">Revert script (fed-up-revert.sh)</option>
+                </select>
+              </div>
+
+              <button class="button" id="copy-script">
+                Copy script to clipboard
+                <span id="copy-status" class="copy-status"></span>
+              </button>
+              <button class="button button-secondary" id="download-script">
+                Download script as <span id="download-filename">fed-up.sh</span>
+              </button>
+            </div>
           </div>
-          <button id="generate-cleanup" class="button button-secondary" type="button">
-            Generate cleanup script
-          </button>
-        </article>
-        <article class="maintenance-card" aria-labelledby="revert-heading">
-          <div class="maintenance-copy">
-            <h3 id="revert-heading" class="maintenance-title">
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-2" />
-              </svg>
-              Undo Fed-up installs
-            </h3>
-            <p>
-              Generate a review-before-removal rollback for RPM packages tracked by current
-              Fed-up setup scripts. Earlier scripts did not create a package manifest.
-              Repositories, settings, Flatpaks, and personal files are not changed.
-            </p>
-          </div>
-          <button id="generate-revert" class="button button-secondary" type="button">
-            Generate revert script
-          </button>
-        </article>
-      </section>
-
-      <section class="fedora-invite" aria-labelledby="fedora-invite-heading">
-        <div class="fedora-invite-heading">
-          <p class="eyebrow">New to Fedora?</p>
-          <h2 id="fedora-invite-heading">Choose a Fedora desktop</h2>
-          <p>Try Fedora itself, then use Fed-up to tailor your system.</p>
-        </div>
-        <div class="fedora-cards">
-          <article class="fedora-card">
-            <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
-              <rect x="5" y="7" width="38" height="27" rx="3" />
-              <path d="M18 41h12m-6-7v7M12 28h24" />
-            </svg>
-            <h3>Fedora Workstation</h3>
-            <p>A polished, dependable desktop for getting to work, creating, and exploring.</p>
-            <a href="https://fedoraproject.org/workstation/" target="_blank" rel="noopener noreferrer">
-              Explore Workstation <span aria-hidden="true">→</span>
-            </a>
-          </article>
-          <article class="fedora-card">
-            <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
-              <rect x="5" y="7" width="38" height="27" rx="3" />
-              <path d="M18 41h12m-6-7v7M12 28h24M15 15h18" />
-              <circle cx="17" cy="21" r="1" />
-              <circle cx="24" cy="21" r="1" />
-              <circle cx="31" cy="21" r="1" />
-            </svg>
-            <h3>Fedora KDE Plasma Desktop</h3>
-            <p>A flexible, feature-rich desktop with the familiar feel and power of KDE Plasma.</p>
-            <a href="https://fedoraproject.org/kde/" target="_blank" rel="noopener noreferrer">
-              Explore Fedora KDE <span aria-hidden="true">→</span>
-            </a>
-          </article>
-        </div>
-        <aside class="spins-alternative">
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="m12 3 9 5-9 5-9-5 9-5Z" />
-            <path d="m3 12 9 5 9-5M3 16l9 5 9-5" />
-          </svg>
-          <p>
-            <strong>Looking for something different?</strong>
-            Fedora Spins offers more desktop environments and editions to explore.
-            <a href="https://fedoraproject.org/spins" target="_blank" rel="noopener noreferrer">
-              Find your Fedora Spin <span aria-hidden="true">→</span>
-            </a>
-          </p>
-        </aside>
-      </section>
-    </main>
-
-    <article class="panel script-panel" id="script" aria-labelledby="script-heading">
-      <div class="panel-heading script-heading">
-        <div>
-          <p class="eyebrow">Your result</p>
-          <h2 id="script-heading">Generated setup script</h2>
-        </div>
-        <div class="button-row">
-          <button id="copy-script" class="button button-secondary" type="button">Copy</button>
-          <button id="download-script" class="button button-primary" type="button">Download .sh</button>
-        </div>
-      </div>
-      <p id="script-description" class="script-description">
-        Select setup items to customize the script. New RPM packages installed by this script
-        are recorded for the Fed-up revert option.
-      </p>
-      <p id="copy-status" class="visually-hidden" role="status" aria-live="polite"></p>
-      <pre id="script-preview" class="script-preview" aria-label="Generated shell script"></pre>
-    </article>
+        </section>
+      </main>
+    </div>
 
     <footer class="site-footer">
-      <div class="container site-footer-content">
-        <p class="footer-brand">Fed-up <span aria-hidden="true">·</span> Fedora setup script builder</p>
-        <ul class="footer-credits">
-          <li class="footer-author">
-            <img src="https://avatars.githubusercontent.com/u/117015158?v=4" alt="" width="28" height="28" />
-            <span>Made by <a href="https://github.com/raycode22" target="_blank" rel="noopener noreferrer">raycode22</a></span>
-          </li>
+      <div class="container footer-content">
+        <ul>
           <li>
-            Powered by
-            <svg class="footer-credit-icon copilot-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M23.922 16.997C23.061 18.492 18.063 22.02 12 22.02 5.937 22.02.939 18.492.078 16.997A.641.641 0 0 1 0 16.741v-2.869a.883.883 0 0 1 .053-.22c.372-.935 1.347-2.292 2.605-2.656.167-.429.414-1.055.644-1.517a10.098 10.098 0 0 1-.052-1.086c0-1.331.282-2.499 1.132-3.368.397-.406.89-.717 1.474-.952C7.255 2.937 9.248 1.98 11.978 1.98c2.731 0 4.767.957 6.166 2.093.584.235 1.077.546 1.474.952.85.869 1.132 2.037 1.132 3.368 0 .368-.014.733-.052 1.086.23.462.477 1.088.644 1.517 1.258.364 2.233 1.721 2.605 2.656a.841.841 0 0 1 .053.22v2.869a.641.641 0 0 1-.078.256Zm-11.75-5.992h-.344a4.359 4.359 0 0 1-.355.508c-.77.947-1.918 1.492-3.508 1.492-1.725 0-2.989-.359-3.782-1.259a2.137 2.137 0 0 1-.085-.104L4 11.746v6.585c1.435.779 4.514 2.179 8 2.179 3.486 0 6.565-1.4 8-2.179v-6.585l-.098-.104s-.033.045-.085.104c-.793.9-2.057 1.259-3.782 1.259-1.59 0-2.738-.545-3.508-1.492a4.359 4.359 0 0 1-.355-.508Zm2.328 3.25c.549 0 1 .451 1 1v2c0 .549-.451 1-1 1-.549 0-1-.451-1-1v-2c0-.549.451-1 1-1Zm-5 0c.549 0 1 .451 1 1v2c0 .549-.451 1-1 1-.549 0-1-.451-1-1v-2c0-.549.451-1 1-1Zm3.313-6.185c.136 1.057.403 1.913.878 2.497.442.544 1.134.938 2.344.938 1.573 0 2.292-.337 2.657-.751.384-.435.558-1.15.558-2.361 0-1.14-.243-1.847-.705-2.319-.477-.488-1.319-.862-2.824-1.025-1.487-.161-2.192.138-2.533.529-.269.307-.437.808-.438 1.578v.021c0 .265.021.562.063.893Zm-1.626 0c.042-.331.063-.628.063-.894v-.02c-.001-.77-.169-1.271-.438-1.578-.341-.391-1.046-.69-2.533-.529-1.505.163-2.347.537-2.824 1.025-.462.472-.705 1.179-.705 2.319 0 1.211.175 1.926.558 2.361.365.414 1.084.751 2.657.751 1.21 0 1.902-.394 2.344-.938.475-.584.742-1.44.878-2.497Z" />
-            </svg>
-            <span><a href="https://github.com/features/copilot" target="_blank" rel="noopener noreferrer">GitHub Copilot</a></span>
-          </li>
-          <li>
-            &nbsp;Hosted on
-            <svg class="footer-credit-icon pages-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M5 3.75h9l5 5V20a1.25 1.25 0 0 1-1.25 1.25h-11.5A1.25 1.25 0 0 1 5 20V3.75Z" />
-              <path d="M14 4v5h5M8.5 13h7m-7 3.5h7" />
-            </svg>
-            <span><a href="https://pages.github.com/" target="_blank" rel="noopener noreferrer">GitHub Pages</a></span>
-          </li>
+            <svg class="footer-credit-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M23.922 16.997C23.061 18.492 18.063 22.02 12 22.02 5.937 22.02.939 18.492.078 16.997A.641.641 0 0 1 0 16.741v-2.869a.883.883 0 0 1 .053-.22c.372-.935 1.347-2.292 2.605-2.656.167-.429.414-1.055.644-1.517a10.098 10.098 0 0 1-.052-1.086c0-1.331.282-2.499 1.132-3.368.397-.406.89-.717 1.474-.952C7.255 2.937 9.248 1.98 11.978 1.98c2.731 0 4.767.957 6.166 2.093.584.235 1.077.546 1.474.952.85.869 1.132 2.037 1.132 3.368 0 .368-.014.733-.052 1.086.23.462.477 1.088.644 1.517 1.258.364 2.233 1.721 2.605 2.656a.841.841 0 0 1 .053.22v2.869a.641.641 0 0 1-.078.256Zm-11.75-5.992h-.344a4.359 4.359 0 0 1-.355.508c-.77.947-1.918 1.492-3.508 1.492-1.725 0-2.989-.359-3.782-1.259a2.137 2.137 0 0 1-.085-.104L4 11.746v6.585c1.435.779 4.514 2.179 8 2.179 3.486 0 6.565-1.4 8-2.179v-6.585l-.098-.104s-.033.045-.085.104c-.793.9-2.057 1.259-3.782 1.259-1.59 0-2.738-.545-3.508-1.492a4.359 4.359 0 0 1-.355-.508Zm2.328 3.25c.549 0 1 .451 1 1v2c0 .549-.451 1-1 1-.549 0-1-.451-1-1v-2c0-.549.451-1 1-1Zm-5 0c.549 0 1 .451 1 1v2c0 .549-.451 1-1 1-.549 0-1-.451-1-1v-2c0-.549.451-1 1-1Zm3.313-6.185c.136 1.057.403 1.913.878 2.497.442.544 1.134.938 2.344.938 1.573 0 2.292-.337 2.657-.751.384-.435.558-1.15.558-2.361 0-1.14-.243-1.847-.705-2.319-.477-.488-1.319-.862-2.824-1.025-1.487-.161-2.192.138-2.533.529-.269.307-.437.808-.438 1.578v.021c0 .265.021.562.063.893Zm-1.626 0c.042-.331.063-.628.063-.894v-.02c-.001-.77-.169-1.271-.438-1.578-.341-.391-1.046-.69-2.533-.529-1.505.163-2.347.537-2.824 1.025-.462.472-.705 1.179-.705 2.319 0 1.211.175 1.926.558 2.361.365.414 1.084.751 2.657.751 1.21 0 1.902-.394 2.344-.938.475-.584.742-1.44.878-2.497Z" /></svg><span> Ray Code</span></span></li>
+          <li>Powered by <a href="https://pages.github.com/">GitHub Pages</a></li>
+          <li>Hosted on <a href="https://pages.github.com/">GitHub Pages</a></li>
         </ul>
       </div>
     </footer>
 
-    </div>
-
-    <template id="category-template">
-      <details class="category-block">
-        <summary class="category-header">
-          <span class="category-icon" aria-hidden="true"></span>
-          <h3></h3>
-          <span class="category-hint">Show setup items</span>
-        </summary>
-        <div class="category-content">
-          <div class="category-actions">
-            <span class="category-item-count"></span>
-            <button type="button" class="button button-tertiary inline-toggle">Toggle all</button>
-          </div>
-          <ul class="item-list"></ul>
-        </div>
-      </details>
-    </template>
-
-    <template id="item-template">
-      <li>
-        <label class="item-row">
-          <input type="checkbox" />
-          <span class="item-text">
-            <span class="item-title"></span>
-            <span class="item-desc"></span>
-          </span>
-          <span class="tag"></span>
-        </label>
-      </li>
-    </template>
-    <noscript>
-    <p>This app requires JavaScript to generate scripts. Please enable JavaScript.</p>
-  </noscript>
-</body>
+    <script type="module" src="app.js"></script>
+  </body>
 </html>
