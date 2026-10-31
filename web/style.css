@@ -88,14 +88,40 @@ body {
 }
 
 .app-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-areas:
-    "navbar"
-    "header"
-    "content"
-    "script"
-    "footer";
+  display: block;
+  min-height: 100vh;
+}
+
+.site-header {
+  background: var(--base);
+  color: var(--on-accent);
+  padding: 1rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.app-layout > main {
+  display: block;
+  padding: 1rem 0;
+}
+
+.selection-area {
+  display: block;
+  padding: 1rem 0;
+}
+
+.script-area {
+  display: block;
+  padding: 1rem 0;
+}
+
+.site-footer {
+  display: block;
+  background: var(--base);
+  color: var(--on-accent);
+  padding: 2rem 0;
+  margin-top: 2rem;
 }
 
 button, a {
