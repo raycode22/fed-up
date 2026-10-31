@@ -109,3 +109,78 @@ export function buildScript(items) {
   }
   return lines.join('\n') + '\n';
 }
+
+// --- Bootstrapper generation (browser side, mirrors build/bootstrap_template.py) ---
+// Produces a POSIX-compatible, self-preparing install.sh that embeds the
+// selected catalog as a base64 payload and installs Python dependencies in
+// an isolated virtual environment before launching the Textual TUI.
+
+const ID_SAFE_RE = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+
+export function validateSelectedIds(ids) {
+  return ids.filter((id) => ID_SAFE_RE.test(id));
+}
+
+export function buildBootstrapperScript(selectedItems, catalogMeta = {}) {
+  const ids = validateSelectedIds(selectedItems.map((i) => i.id)).sort();
+  const embeddedCatalog = {
+    generated_at: catalogMeta.generated_at || new Date().toISOString(),
+    source: 'fed-up web generator',
+    selected: ids,
+    categories: [{
+      category: 'selected',
+      label: 'Your selections',
+      items: selectedItems.filter((i) => ID_SAFE_RE.test(i.id)),
+    }],
+  };
+  const json = JSON.stringify(embeddedCatalog, null, 2);
+  // Base64 encode without Buffer/btoa unicode pitfalls.
+  const bytes = new TextEncoder().encode(json);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 1) bin += String.fromCharCode(bytes[i]);
+  const b64 = (typeof btoa === 'function')
+    ? btoa(bin)
+    : Buffer.from(bytes).toString('base64');
+  const wrapped = b64.match(/.{1,76}/g).join('\n');
+
+  const headerLines = [
+    '#!/usr/bin/env sh',
+    '# Fed-up bootstrapper — POSIX shell (bash/zsh/sh/dash compatible).',
+    '# Generated entirely in your browser from your selections.',
+    'set -eu',
+    '',
+    'echo "Fed-up bootstrapper"',
+    'if ! command -v python3 >/dev/null 2>&1; then',
+    '  echo "Error: python3 (>=3.10) is required." >&2; exit 1',
+    'fi',
+    'VENV="${FEDUP_VENV_DIR:-$HOME/.local/share/fed-up/venv}"',
+    'if [ ! -x "$VENV/bin/python" ] || ! "$VENV/bin/python" -c "import textual" >/dev/null 2>&1; then',
+    '  echo "Preparing Python environment at $VENV ..." >&2',
+    '  rm -rf "${VENV}.new"',
+    '  mkdir -p "$(dirname "$VENV")"',
+    '  if ! python3 -m venv "${VENV}.new" >/dev/null 2>&1; then',
+    '    echo "Error: python3 -m venv failed. Try: sudo dnf5 install -y python3-virtualenv" >&2; exit 1',
+    '  fi',
+    '  if ! "${VENV}.new/bin/python" -m pip install --disable-pip-version-check -q textual==1.0.0; then',
+    '    echo "Error: dependency installation failed." >&2; rm -rf "${VENV}.new"; exit 1',
+    '  fi',
+    '  "${VENV}.new/bin/python" -c "import textual" || { rm -rf "${VENV}.new"; echo "Error: textual missing after install." >&2; exit 1; }',
+    '  rm -rf "$VENV"; mv "${VENV}.new" "$VENV"',
+    'fi',
+    'TMPD=$(mktemp -d "${TMPDIR:-/tmp}/fed-up.XXXXXX")',
+    'trap \'rm -rf "$TMPD"\' EXIT INT TERM',
+    'cat > "$TMPD/catalog.b64" <<\'FEDUP_CATALOG_EOF\'',
+    wrapped,
+    'FEDUP_CATALOG_EOF',
+    '"$VENV/bin/python" - "$TMPD" <<\'FEDUP_UNPACK_EOF\'',
+    'import base64, pathlib, sys',
+    'dest = pathlib.Path(sys.argv[1])',
+    '(dest / "catalog.json").write_bytes(base64.b64decode((dest / "catalog.b64").read_bytes()))',
+    'FEDUP_UNPACK_EOF',
+    'if [ ! -t 0 ] || [ ! -t 1 ]; then',
+    '  echo "Fed-up needs an interactive terminal." >&2; exit 2',
+    'fi',
+    'exec "$VENV/bin/python" -m fedup_tui --config "$TMPD/catalog.json"',
+  ];
+  return headerLines.join('\n') + '\n';
+}
