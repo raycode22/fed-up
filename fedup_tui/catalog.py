@@ -92,7 +92,9 @@ def verbose_text(item: dict) -> str:
 
 
 def detect_desktop() -> str:
-    xdg = (sys.environ.get("XDG_CURRENT_DESKTOP") or "").upper()
+    import os
+
+    xdg = (os.environ.get("XDG_CURRENT_DESKTOP") or "").upper()
     if "GNOME" in xdg:
         return "gnome"
     if "KDE" in xdg or "PLASMA" in xdg:
