@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { shellQuote, topoSort, autoSelectDependencies, hasConflict, filterBySystem, isRecommended } from '../web/generator.js';
+import { shellQuote, topoSort, autoSelectDependencies, hasConflict, filterBySystem, isRecommended, validateSelectedIds, buildBootstrapperScript } from '../web/generator.js';
 
 test('shellQuote simple', () => {
   assert.equal(shellQuote('abc'), 'abc');
@@ -50,4 +50,39 @@ test('isRecommended desktop-specific', () => {
   assert.equal(isRecommended(item, 'kde'), false);
   const anyItem = { id: 'a', status: 'recommended', desktops: 'any' };
   assert.equal(isRecommended(anyItem, 'kde'), true);
+});
+
+test('validateSelectedIds rejects injection', () => {
+  assert.deepEqual(validateSelectedIds(['git', 'bad;rm', 'a b', "x'y", 'ok.id-1']),
+    ['git', 'ok.id-1']);
+});
+
+test('buildBootstrapperScript is POSIX and embeds selections', () => {
+  const items = [
+    { id: 'git', label: 'Git', command: 'sudo dnf5 install -y git' },
+    { id: 'htop', label: 'htop', command: 'sudo dnf5 install -y htop' },
+  ];
+  const script = buildBootstrapperScript(items, { generated_at: 'FIXED' });
+  assert.ok(script.startsWith('#!/usr/bin/env sh'));
+  assert.ok(!script.includes('[['));           // no bash-isms
+  assert.ok(!script.includes('mapfile'));
+  assert.ok(script.includes('textual==1.0.0')); // pinned dependency
+  assert.ok(script.includes('-m venv'));        // isolated env
+  assert.ok(script.includes('--config "$TMPD/catalog.json"'));
+  // deterministic for fixed timestamp
+  assert.equal(script, buildBootstrapperScript(items, { generated_at: 'FIXED' }));
+  // embedded payload round-trips
+  const m = script.match(/<<'FEDUP_CATALOG_EOF'\n([\s\S]*?)\nFEDUP_CATALOG_EOF/);
+  const json = Buffer.from(m[1].replace(/\n/g, ''), 'base64').toString();
+  const parsed = JSON.parse(json);
+  assert.deepEqual(parsed.selected, ['git', 'htop']);
+  assert.equal(parsed.categories[0].items.length, 2);
+});
+
+test('buildBootstrapperScript drops unsafe ids from payload', () => {
+  const items = [{ id: 'ev$(il)', label: 'evil' }, { id: 'safe', label: 'ok' }];
+  const script = buildBootstrapperScript(items, { generated_at: 'FIXED' });
+  const m = script.match(/<<'FEDUP_CATALOG_EOF'\n([\s\S]*?)\nFEDUP_CATALOG_EOF/);
+  const parsed = JSON.parse(Buffer.from(m[1].replace(/\n/g, ''), 'base64').toString());
+  assert.deepEqual(parsed.selected, ['safe']);
 });

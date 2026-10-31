@@ -497,7 +497,7 @@ class FedUpApp(App):
 
     CSS = """
     Screen { background: $surface; }
-    #notice { alignment: center middle; width: 90%; max-width: 110; padding: 0 1; }
+    #notice { align: center middle; width: 90%; max-width: 110; padding: 0 1; }
     #notice-body { max-height: 100%; }
     #confirm { align: center middle; width: 80%; max-width: 100; padding: 0 1; }
     #confirm-body { max-height: 70%; }
