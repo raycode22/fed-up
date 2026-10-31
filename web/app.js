@@ -337,6 +337,15 @@ function init() {
       if (!(checkbox instanceof HTMLInputElement) || checkbox.type !== 'checkbox') return;
       updateSelection([checkbox.dataset.id], checkbox.checked);
     });
+    categoryList.addEventListener('click', (event) => {
+      const toggleBtn = event.target.closest('.inline-toggle');
+      if (!toggleBtn) return;
+      const block = toggleBtn.closest('.category-block');
+      if (!block) return;
+      const checkboxes = block.querySelectorAll('input[type="checkbox"]');
+      const shouldSelect = Array.from(checkboxes).some((cb) => !cb.checked);
+      updateSelection(Array.from(checkboxes, (cb) => cb.dataset.id), shouldSelect);
+    });
   }
   if (copyButton) {
     copyButton.addEventListener('click', async () => {
@@ -384,47 +393,28 @@ function updateSelection(ids, selected) {
   renderScriptPreview(getCurrentScript(getSelections(), CATALOG_ITEMS));
 }
 function renderCategories() {
-  if (!categoryList) return;
   const selectedIds = new Set(state.selected);
-  categoryList.innerHTML = '';
-  const categoryNames = { dnf: 'Repositories & Codecs', multimedia: 'Audio & Video', development: 'Development Tools', tweaks: 'System Tweaks' };
   const categoryMap = {};
   for (const item of CATALOG_ITEMS) {
     const cat = item.category || 'default';
     if (!categoryMap[cat]) categoryMap[cat] = [];
     categoryMap[cat].push(item);
   }
-  Object.keys(categoryNames).forEach((cat) => {
-    const category = { name: categoryNames[cat], items: categoryMap[cat] || [] };
-    const block = document.createElement('div');
-    block.className = 'category-block';
-    const summary = document.createElement('summary');
-    summary.className = 'category-header';
-    summary.innerHTML = `<span class="category-icon" aria-hidden="true"></span><h3>${category.name}</h3><span class="category-hint">Show setup items</span>`;
-    const toggleBtn = document.createElement('button');
-    toggleBtn.type = 'button';
-    toggleBtn.className = 'inline-toggle';
-    const allSel = category.items.length > 0 && category.items.every((i) => selectedIds.has(i.id));
-    toggleBtn.textContent = allSel ? 'Deselect all' : 'Select all';
-    toggleBtn.addEventListener('click', () => {
-      const shouldSelect = !category.items.every((i) => selectedIds.has(i.id));
-      updateSelection(category.items.map((i) => i.id), shouldSelect);
-    });
-    summary.appendChild(toggleBtn);
-    const content = document.createElement('div');
-    content.className = 'category-content';
-    const itemsList = document.createElement('ul');
-    itemsList.className = 'item-list';
-    category.items.forEach((item) => {
+  const listIds = { dnf: 'repo-list', multimedia: 'media-list', development: 'dev-list', tweaks: 'tweak-list' };
+  const countIds = { dnf: 'repo-count', multimedia: 'media-count', development: 'dev-count', tweaks: 'tweak-count' };
+  for (const cat of ['dnf', 'multimedia', 'development', 'tweaks']) {
+    const listEl = document.getElementById(listIds[cat]);
+    const countEl = document.getElementById(countIds[cat]);
+    if (!listEl) continue;
+    listEl.innerHTML = '';
+    const items = categoryMap[cat] || [];
+    items.forEach((item) => {
       const li = document.createElement('li');
       li.innerHTML = `<label class="item-row"><input type="checkbox" data-id="${item.id}" ${selectedIds.has(item.id) ? 'checked' : ''} /><span class="item-text"><span class="item-title">${item.label}</span><span class="item-desc">${item.description || ''}</span></span><span class="tag">${item.tags?.join(' ') || ''}</span></label>`;
-      itemsList.appendChild(li);
+      listEl.appendChild(li);
     });
-    content.appendChild(itemsList);
-    block.appendChild(summary);
-    block.appendChild(content);
-    categoryList.appendChild(block);
-  });
+    if (countEl) countEl.textContent = `${items.length} item${items.length !== 1 ? 's' : ''}`;
+  }
   if (itemCount) itemCount.textContent = `${state.selected.size} item${state.selected.size !== 1 ? 's' : ''} selected`;
 }
 function renderScriptPreview(script) {
