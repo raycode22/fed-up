@@ -1,10 +1,17 @@
+#!/usr/bin/env python3
+"""Build an install.sh that bootstraps the Fed-up Textual TUI."""
+
 import base64
 import json
 import os
+import base64
+import json
+import sys
 from pathlib import Path
 
 
-def build_bootstrapper(output_path, payload_dir, data_json_path=None):
+def build_bootstrapper(output_path: Path, payload_dir: Path,
+                       data_json_path: Path) -> None:
     files = {}
     for root, _, fs in os.walk(payload_dir):
         for f in fs:
@@ -14,55 +21,105 @@ def build_bootstrapper(output_path, payload_dir, data_json_path=None):
                 files[rel] = p.read_text(encoding="utf-8")
 
     payload = base64.b64encode(json.dumps(files).encode()).decode()
-    data_b64 = ""
-    if data_json_path and os.path.exists(data_json_path):
-        data_content = Path(data_json_path).read_text(encoding="utf-8")
-        data_b64 = base64.b64encode(data_content.encode()).decode()
 
-    script = (
-        "#!/bin/sh\n"
-        "set -eu\n\n"
-        'echo "Fed-up bootstrapper"\n'
-        "if ! command -v python3 >/dev/null 2>&1; then\n"
-        '  echo "python3 is required" >&2\n'
-        "  exit 1\n"
-        "fi\n\n"
-        "TMPDIR=$(mktemp -d)\n"
-        'trap \'rm -rf "$TMPDIR"\' EXIT INT TERM\n\n'
-        'mkdir -p "$TMPDIR/fedup_tui"\n'
-        'python3 - "$TMPDIR/fedup_tui" "' + data_b64 + '" <<' + "'PY'" + "\n"
-        "import base64, json, sys, os\n"
-        f'data = base64.b64decode("{payload}")\n'
-        "files = json.loads(data)\n"
-        "base = sys.argv[1]\n"
-        "for rel, content in files.items():\n"
-        "    path = os.path.join(base, rel)\n"
-        "    os.makedirs(os.path.dirname(path), exist_ok=True)\n"
-        '    with open(path, "w", encoding="utf-8") as f:\n'
-        "        f.write(content)\n"
-        "data_b64 = sys.argv[2] if len(sys.argv) > 2 else ''\n"
-        "if data_b64:\n"
-        "    with open(os.path.join(os.path.dirname(base), 'data.json'), 'w', encoding='utf-8') as f:\n"
-        "        f.write(base64.b64decode(data_b64).decode())\n"
-        "PY\n\n"
-        'cd "$TMPDIR"\n'
-    )
-    if data_b64:
-        script += 'python3 -m fedup_tui --config "$TMPDIR/data.json" "$@"\n'
-    else:
-        script += 'python3 -m fedup_tui "$@"\n'
-
-    Path(output_path).write_text(script, encoding="utf-8")
+    script_lines = [
+        "#!/usr/bin/env sh",
+        "set -eu",
+        "",
+        'echo "Fed-up bootstrapper"',
+        "",
+        'if ! command -v python3 >/dev/null 2>&1; then',
+        '  echo "python3 is required" >&2',
+        "  exit 1",
+        "fi",
+        "",
+        "# Install required Python dependencies if not available",
+        'for pkg in textual pyyaml; do',
+        '  import_name="$pkg"',
+        '  if [ "$pkg" = "pyyaml" ]; then',
+        '    import_name="yaml"',
+        '  fi',
+        '  if ! python3 -c "import $import_name" 2>/dev/null; then',
+        '    echo "Installing $pkg..." >&2',
+        '    python3 -m pip install --quiet "$pkg" || { echo "Failed to install $pkg" >&2; exit 1; }',
+        '  fi',
+        'done',
+        "",
+        "TMPDIR=$(mktemp -d)",
+        'trap "rm -rf \\"$TMPDIR\\"" EXIT INT TERM',
+        "",
+        "# copy the Python package and data.json into the sandbox",
+        'mkdir -p "$TMPDIR/fedup_tui"',
+        'cp -r "$(dirname "$0")/../fedup_tui"/* "$TMPDIR/fedup_tui/" 2>/dev/null || true',
+        "",
+        "# Find data.json relative to the script location",
+        'DATA_JSON=""',
+        'if [ -f "$(dirname "$0")/../web/data.json" ]; then',
+        '  DATA_JSON="$(dirname "$0")/../web/data.json"',
+        'elif [ -f "$(dirname "$0")/data.json" ]; then',
+        '  DATA_JSON="$(dirname "$0")/data.json"',
+        "fi",
+        "",
+        'if [ -z "$DATA_JSON" ]; then',
+        '  echo "Error: data.json not found. Please ensure it is in the web/ directory." >&2',
+        "  exit 1",
+        "fi",
+        "",
+        'cp "$DATA_JSON" "$TMPDIR/data.json"',
+        "",
+        "# check for a real terminal before launching the TUI",
+        'if [ -t 0 ]; then',
+        '  cd "$TMPDIR"',
+        '  exec python3 -m fedup_tui --config "$TMPDIR/data.json"',
+        "else",
+        '  echo "Fed-up needs an interactive terminal (or run with \"./install.sh --help\")." >&2',
+        "  exit 2",
+        "fi",
+        "",
+        "# be nice – clean temp dir on normal exit",
+        'trap "rm -rf \\"$TMPDIR\\"" EXIT',
+    ]
+    script = "\n".join(script_lines) + "\n"
+    output_path.write_text(script, encoding="utf-8")
     os.chmod(output_path, 0o755)
-    return output_path
 
 
 if __name__ == "__main__":
     import argparse
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--output", required=True)
-    ap.add_argument("--payload-dir", default="fedup_tui")
-    ap.add_argument("--data-json", default=None)
-    ns = ap.parse_args()
-    build_bootstrapper(ns.output, ns.payload_dir, ns.data_json)
+    import subprocess
+    import sys
+
+    # Ensure textual is available (install if missing)
+    def ensure_textual():
+        try:
+            import textual
+            return True
+        except ImportError:
+            print("Installing textual...", file=sys.stderr)
+            try:
+                subprocess.run([sys.executable, "-m", "pip", "install", "textual"], check=True)
+                return True
+            except Exception as e:
+                print(f"Failed to install textual: {e}", file=sys.stderr)
+                return False
+
+    if not ensure_textual():
+        sys.exit(1)
+
+    parser = argparse.ArgumentParser(description="Fed-up bootstrapper builder")
+    parser.add_argument("--output", required=True,
+                        help="path for the generated install.sh")
+    parser.add_argument("--payload-dir", default="fedup_tui",
+                        help="directory containing the Python package")
+    parser.add_argument("--data-json", required=True,
+                        help="path to web/data.json (the generated config)")
+
+    ns = parser.parse_args()
+
+    data_json_path = Path(ns.data_json)
+    if not data_json_path.is_file():
+        sys.stderr.write(f"Error: {data_json_path} not found.\\n")
+        sys.exit(1)
+
+    build_bootstrapper(Path(ns.output), Path(ns.payload_dir), data_json_path)
     print(f"Generated {ns.output}")
