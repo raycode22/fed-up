@@ -1,4 +1,5 @@
 import { autoSelectDependencies, filterBySystem, isRecommended, buildBootstrapperScript } from './generator.js';
+import { CATALOG_ITEMS } from './catalog.js';
 
 const state = {
   selected: new Set(),
@@ -34,10 +35,10 @@ const CATEGORY_ICON_PATHS = {
 };
 const SCRIPT_MODES = {
   setup: {
-    title: 'Generated Fed-up bootstrapper (install.sh)',
+    title: 'Generated Fed-up installer (fed-up.sh)',
     description:
-      'Self-contained POSIX script generated in your browser. It creates an isolated Python virtual environment, installs pinned dependencies (Textual), verifies them, then launches the interactive Fed-up TUI with your selections preloaded. Works under Bash, Zsh, or plain sh — review it before running: less fed-up-install.sh',
-    filename: 'fed-up-install.sh',
+      'Self-contained POSIX script generated in your browser. It creates an isolated Python virtual environment, installs pinned dependencies (Textual), verifies them, then launches the interactive Fed-up TUI with your selections preloaded. Works under Bash, Zsh, or plain sh — review it before running: less fed-up.sh',
+    filename: 'fed-up.sh',
   },
   cleanup: {
     title: 'Generated cleanup script',
@@ -84,18 +85,26 @@ themeToggle.addEventListener('click', () => {
   updateThemeToggle(nextTheme);
 });
 
-async function loadData() {
-  const response = await fetch('./data.json');
-  if (!response.ok) {
-    throw new Error('Could not load setup options. Please try again later.');
-  }
-
-  const payload = await response.json();
-  if (!Array.isArray(payload.categories)) {
+function loadData() {
+  // The catalog ships as a static ES module (web/catalog.js): the page
+  // renders instantly with no network request beyond the site itself.
+  if (!Array.isArray(CATALOG_ITEMS)) {
     throw new Error('The setup options are not in the expected format.');
   }
-
-  state.allCategories = payload.categories;
+  // Group items by their source category (dnf/multimedia/tweaks/development).
+  const groups = new Map();
+  for (const item of CATALOG_ITEMS) {
+    const key = item.category || 'other';
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(item);
+  }
+  const LABELS = { dnf: 'DNF & Repositories', multimedia: 'Audio, Video & Codecs',
+                   tweaks: 'System Tweaks', development: 'Development Tools' };
+  state.allCategories = [...groups.entries()].map(([category, items]) => ({
+    category,
+    label: LABELS[category] || category,
+    items,
+  }));
   state.categories = state.allCategories.map((category) => ({
     ...category,
     items: filterBySystem(category.items, { desktop: state.desktop }),
@@ -215,7 +224,7 @@ function generateScript() {
       'printf "%s\n" "No setup options selected. Nothing to install."',
     ].join('\n');
   }
-  return buildBootstrapperScript(selectedItems);
+  return buildBootstrapperScript(selectedItems, {}, getAllItems());
 }
 
 function generateCleanupScript() {
