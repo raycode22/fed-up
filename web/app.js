@@ -320,6 +320,12 @@ const categoryList = document.getElementById('category-list');
 const itemCount = document.getElementById('item-count');
 const scriptPreview = document.getElementById('script-preview');
 const copyButton = document.getElementById('copy-script');
+const copyStatus = document.getElementById('copy-status');
+const downloadButton = document.getElementById('download-script');
+const downloadFilename = document.getElementById('download-filename');
+const themeToggle = document.getElementById('theme-toggle');
+const scriptModeSelect = document.getElementById('script-mode');
+const desktopSelect = document.getElementById('desktop-select');
 function getSelections() { const ids = new Set(state.selected); return CATALOG_ITEMS.filter((i) => ids.has(i.id)); }
 function setTheme(theme) {
   document.documentElement.dataset.theme = theme;
@@ -439,9 +445,4 @@ function setScriptMode(mode) {
   if (downloadFilename) downloadFilename.textContent = modeConfig.filename;
   renderScriptPreview(getCurrentScript(getSelections(), CATALOG_ITEMS));
 }
-const copyStatus = document.getElementById('copy-status');
-const downloadButton = document.getElementById('download-script');
-const downloadFilename = document.getElementById('download-filename');
-const themeToggle = document.getElementById('theme-toggle');
-const scriptModeSelect = document.getElementById('script-mode');
-const desktopSelect = document.getElementById('desktop-select');
+// (moved to top of file)
