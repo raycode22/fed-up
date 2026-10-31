@@ -36,7 +36,7 @@ elif [ -f "$(dirname "$0")/data.json" ]; then
 fi
 
 if [ -z "$DATA_JSON" ]; then
-  echo "Error: data.json not found. Please ensure it's in the web/ directory." >&2
+  echo "Error: data.json not found. Please ensure it is in the web/ directory." >&2
   exit 1
 fi
 
@@ -47,7 +47,7 @@ if [ -t 0 ]; then
   cd "$TMPDIR"
   exec python3 -m fedup_tui --config "$TMPDIR/data.json"
 else
-  echo "Fed-up needs an interactive terminal (or run with \"./install.sh --help\")." >&2
+  echo "Fed-up needs an interactive terminal (or run with "./install.sh --help")." >&2
   exit 2
 fi
 
