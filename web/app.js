@@ -305,3 +305,153 @@ export function getCurrentScript(selections, catalogItems) {
   const selectedIds = selections.map((s) => s.id);
   return buildBootstrapperScript(catalogItems, { generated_at: new Date().toISOString() });
 }
+// Catalog data (embedded fallback)
+export const CATALOG_ITEMS = [
+  { id: 'rpmfusion-free', label: 'Enable RPM Fusion free repo', description: 'Add the RPM Fusion free repository for audio, video and open-source codecs.', command: 'sudo dnf5 install -y https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm', requires_sudo: true, tested_fedora: ['43', '44'], supported_fedora: ['43', '44'], desktops: 'any', arch: 'any', tags: ['repo', 'multimedia', 'rpmfusion'], category: 'dnf', status: 'recommended' },
+  { id: 'git', label: 'Install Git', description: 'Add Git for version control and source code management.', command: 'sudo dnf5 install -y git', requires_sudo: true, tested_fedora: ['43', '44'], supported_fedora: ['43', '44'], desktops: 'any', arch: 'any', tags: ['git', 'version-control'], category: 'development', status: 'recommended' },
+];
+const state = { selected: new Set(), categories: [], desktop: 'any', allCategories: [] };
+const SCRIPT_MODES = {
+  setup: { title: 'Generated Fed-up installer (fed-up.sh)', description: 'Self-contained POSIX script generated in your browser.', filename: 'fed-up.sh' },
+  cleanup: { title: 'Generated cleanup script', description: 'Clears DNF caches, then asks DNF to propose unused dependencies.', filename: 'fedora-cleanup.sh' },
+  revert: { title: 'Generated Fed-up revert script', description: 'Removes only RPM packages recorded as newly installed.', filename: 'fed-up-revert.sh' },
+};
+const categoryList = document.getElementById('category-list');
+const itemCount = document.getElementById('item-count');
+const scriptPreview = document.getElementById('script-preview');
+const copyButton = document.getElementById('copy-script');
+function getSelections() { const ids = new Set(state.selected); return CATALOG_ITEMS.filter((i) => ids.has(i.id)); }
+function setTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  const nextTheme = theme === 'dark' ? 'light' : 'dark';
+  if (themeToggle) {
+    themeToggle.dataset.mode = theme;
+    themeToggle.setAttribute('aria-label', `Switch to ${nextTheme} mode`);
+    themeToggle.title = `Switch to ${nextTheme} mode`;
+  }
+}
+function init() {
+  if (categoryList) {
+    categoryList.addEventListener('change', (event) => {
+      const checkbox = event.target;
+      if (!(checkbox instanceof HTMLInputElement) || checkbox.type !== 'checkbox') return;
+      updateSelection([checkbox.dataset.id], checkbox.checked);
+    });
+  }
+  if (copyButton) {
+    copyButton.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(getCurrentScript(getSelections(), CATALOG_ITEMS));
+        if (copyStatus) copyStatus.textContent = 'Script copied to clipboard.';
+      } catch (error) {
+        if (copyStatus) copyStatus.textContent = 'Could not copy the script.';
+      }
+    });
+  }
+  if (downloadButton) {
+    downloadButton.addEventListener('click', () => {
+      const blob = new Blob([getCurrentScript(getSelections(), CATALOG_ITEMS)], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = SCRIPT_MODES[scriptModeSelect?.value || 'setup'].filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+  }
+  if (scriptModeSelect) {
+    scriptModeSelect.addEventListener('change', () => {
+      setScriptMode(scriptModeSelect.value);
+    });
+  }
+  if (desktopSelect) {
+    desktopSelect.addEventListener('change', () => {
+      state.desktop = desktopSelect.value;
+    });
+  }
+  renderCategories();
+  setScriptMode('setup');
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+function updateSelection(ids, selected) {
+  if (selected) ids.forEach((id) => state.selected.add(id));
+  else ids.forEach((id) => state.selected.delete(id));
+  renderCategories();
+  renderScriptPreview(getCurrentScript(getSelections(), CATALOG_ITEMS));
+}
+function renderCategories() {
+  if (!categoryList) return;
+  const selectedIds = new Set(state.selected);
+  categoryList.innerHTML = '';
+  const categoryNames = { dnf: 'Repositories & Codecs', multimedia: 'Audio & Video', development: 'Development Tools', tweaks: 'System Tweaks' };
+  const categoryMap = {};
+  for (const item of CATALOG_ITEMS) {
+    const cat = item.category || 'default';
+    if (!categoryMap[cat]) categoryMap[cat] = [];
+    categoryMap[cat].push(item);
+  }
+  Object.keys(categoryNames).forEach((cat) => {
+    const category = { name: categoryNames[cat], items: categoryMap[cat] || [] };
+    const block = document.createElement('div');
+    block.className = 'category-block';
+    const summary = document.createElement('summary');
+    summary.className = 'category-header';
+    summary.innerHTML = `<span class="category-icon" aria-hidden="true"></span><h3>${category.name}</h3><span class="category-hint">Show setup items</span>`;
+    const toggleBtn = document.createElement('button');
+    toggleBtn.type = 'button';
+    toggleBtn.className = 'inline-toggle';
+    const allSel = category.items.length > 0 && category.items.every((i) => selectedIds.has(i.id));
+    toggleBtn.textContent = allSel ? 'Deselect all' : 'Select all';
+    toggleBtn.addEventListener('click', () => {
+      const shouldSelect = !category.items.every((i) => selectedIds.has(i.id));
+      updateSelection(category.items.map((i) => i.id), shouldSelect);
+    });
+    summary.appendChild(toggleBtn);
+    const content = document.createElement('div');
+    content.className = 'category-content';
+    const itemsList = document.createElement('ul');
+    itemsList.className = 'item-list';
+    category.items.forEach((item) => {
+      const li = document.createElement('li');
+      li.innerHTML = `<label class="item-row"><input type="checkbox" data-id="${item.id}" ${selectedIds.has(item.id) ? 'checked' : ''} /><span class="item-text"><span class="item-title">${item.label}</span><span class="item-desc">${item.description || ''}</span></span><span class="tag">${item.tags?.join(' ') || ''}</span></label>`;
+      itemsList.appendChild(li);
+    });
+    content.appendChild(itemsList);
+    block.appendChild(summary);
+    block.appendChild(content);
+    categoryList.appendChild(block);
+  });
+  if (itemCount) itemCount.textContent = `${state.selected.size} item${state.selected.size !== 1 ? 's' : ''} selected`;
+}
+function renderScriptPreview(script) {
+  if (!scriptPreview) return;
+  if (script && script.trim()) {
+    scriptPreview.innerHTML = `<pre class="script-code"><code>${escapeHtml(script)}</code></pre>`;
+  } else {
+    scriptPreview.innerHTML = '<p>Make your selections to generate the script.</p>';
+  }
+}
+function escapeHtml(text) {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+function setScriptMode(mode) {
+  if (scriptModeSelect) scriptModeSelect.value = mode;
+  const modeConfig = SCRIPT_MODES[mode];
+  if (!modeConfig) return;
+  const heading = document.getElementById('script-heading');
+  const desc = document.getElementById('script-description');
+  if (heading) heading.textContent = modeConfig.title;
+  if (desc) desc.textContent = modeConfig.description;
+  if (downloadFilename) downloadFilename.textContent = modeConfig.filename;
+  renderScriptPreview(getCurrentScript(getSelections(), CATALOG_ITEMS));
+}
+const copyStatus = document.getElementById('copy-status');
+const downloadButton = document.getElementById('download-script');
+const downloadFilename = document.getElementById('download-filename');
+const themeToggle = document.getElementById('theme-toggle');
+const scriptModeSelect = document.getElementById('script-mode');
+const desktopSelect = document.getElementById('desktop-select');
