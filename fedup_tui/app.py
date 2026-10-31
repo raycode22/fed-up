@@ -197,7 +197,10 @@ class FedUpApp(App):
 
     def on_mount(self) -> None:
         if not self.items:
-            print("Error: no installation items found. Check data.json.", file=sys.stderr)
+            if self.config_path:
+                print(f"Error: no installation items found in {self.config_path}. Check data.json.", file=sys.stderr)
+            else:
+                print("Error: no installation items found. Use --config to specify a data.json file.", file=sys.stderr)
             self.exit(1)
             return
         self.push_screen(SafetyNoticeScreen())
