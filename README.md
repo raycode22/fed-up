@@ -1,50 +1,64 @@
-# Fed-up
+# Fed-up - Fedora Post-Install Script Generator
 
-Fed-up is a small web app for building setup scripts for Fedora Linux. Choose the software and system changes you want, review the generated script, and download it to run on your computer.
+A zero-build, static web application that generates a portable, interactive shell script (`setup.sh`) for Fedora Linux post-installation configurations.
 
-The app runs in your browser and does not install software itself. Setup choices are unselected by default. Choose individual items or use **Select recommended**.
+## Project Structure
 
-## Use the app
-
-Open the hosted app, or run Fed-up locally as described below.
-
-1. Choose the setup items you need.
-2. Generate the script and read it before running it.
-3. Run the downloaded script in a terminal on a Fedora computer.
-
-Setup scripts check that they are running on Fedora and that required tools are available. Guided mode asks before each item. Use `--quiet` to hide successful command output or `--verbose` to show it. Use `--yes` to run all selected items without these prompts. This requires an active sudo session; run `sudo -v` first. Add `--quiet` to hide successful output in this mode.
-
-Cleanup and revert scripts may remove packages. Review the changes proposed by DNF before confirming them.
-
-## Run locally
-
-You need Python 3 and a terminal. From the project folder, run:
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-python build/build.py
-python -m http.server 8000 --directory web
+```
+fed-up/
+├── index.html          # Modern HTML5 interface
+├── style.css           # Modern CSS (nesting, custom properties, :where() reset)
+├── app.js              # Vanilla JS script assembly engine (ES2024+)
+├── setup.sh            # Shell wrapper with pre-flight onboarding
+├── README.md           # This file
 ```
 
-Open <http://localhost:8000> in your browser. Keep the server running while using the app. On Windows, activate the virtual environment with `.venv\Scripts\Activate.ps1` in PowerShell instead of the `source` command.
+## Features
 
-## Make changes
+- **Zero-build**: No npm dependencies, no build tools, no frameworks
+- **GitHub Pages ready**: Deploy directly from `main` branch root
+- **Modern web standards**: HTML5 semantic elements, CSS nesting, ES2024+ modules
+- **dnf5 exclusive**: Uses native DNF5 syntax (no legacy yum)
+- **gum TUI**: Interactive terminal UI using Charm's gum components
+- **Python payload**: Embedded Python using `subprocess.run()` (no `os.system()`)
 
-Setup options are defined in YAML files in `config/`. After changing them, run `python build/build.py` to validate the configuration and update `web/data.json`.
+## Technologies
 
-Run the tests with:
+### Frontend
+- HTML5 semantic elements (`<form>`, `<fieldset>`, `<legend>`, `<label>`, `<output>`, `<dialog>`)
+- Modern CSS: Nesting, Custom Properties, `:where()` reset, Flexbox/Grid
+- JavaScript: ES2024+ `<script type="module">`, `FormData`, `Blob`, `URL.createObjectURL()`
+- Clipboard API: `navigator.clipboard.writeText()` (no `document.execCommand`)
 
-```bash
-python -m pytest build/tests.py
-```
+### Shell Wrapper
+- Shebang: `#!/usr/bin/env bash`
+- Strict mode: `set -euo pipefail`
+- Pre-flight banner with consent prompt (`[Y/n]`) before sudo
+- Deferred bootstrapping: `sudo dnf5 install -y python3 gum`
+- Single-quoted heredoc payload extraction
+- Signal trapping: `trap 'rm -f "$TEMP_PY"' EXIT INT TERM`
 
-## Project files
+### Python Payload
+- `subprocess.run(..., check=True, text=True)` with `CalledProcessError` handling
+- No `os.system()` usage
 
-| Folder | Purpose |
-| --- | --- |
-| `config/` | Setup option definitions |
-| `build/` | Configuration checks, data generation, and tests |
-| `web/` | The app and its generated data |
-| `docs/` | Development and project notes |
+## Deployment
+
+Deploy directly to GitHub Pages from the `main` branch root.
+
+1. Push all files to `main` branch
+2. Enable GitHub Pages in repository settings
+3. Select `main` branch as source
+4. Site is available at `https://<user>.github.io/fed-up/`
+
+## Usage
+
+1. Open `index.html` in a web browser
+2. Select desired post-installation options
+3. Click "Copy script" or "Download script" to get `setup.sh`
+4. Run `setup.sh` on your Fedora system
+5. Consent will be requested before any sudo operations
+
+## License
+
+MIT License
