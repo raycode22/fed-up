@@ -18,7 +18,7 @@ export const CATALOG_ITEMS = [
   // System Configuration (no counter)
   { id: 'set-hostname', label: 'Set Hostname', section: 'system-config', installMethod: 'config', command: '', revertible: true, requiresInput: { type: 'hostname' }, needsVerification: false, depends_on: [], conflicts_with: [], desktops: 'any', supported_fedora: [], tags: ['system'] },
   { id: 'configure-dnf', label: 'Configure DNF', section: 'system-config', installMethod: 'config', command: 'sudo dnf5 config-manager setopt fastestmirror=True deltarpm=True', revertible: true, requiresInput: null, needsVerification: false, depends_on: [], conflicts_with: [], desktops: 'any', supported_fedora: [], tags: ['dnf'] },
-  { id: 'dnf-autoupdate', label: 'Enable DNF Autoupdate', section: 'system-config', installMethod: 'service', command: 'sudo dnf5 install -y dnf5-automatic && sudo systemctl enable --now dnf5-automatic.timer', revertible: true, requiresInput: null, needsVerification: false, depends_on: [], conflicts_with: [], desktops: 'any', supported_fedora: [], tags: ['dnf'] },
+  { id: 'dnf-autoupdate', label: 'Enable DNF Autoupdate', section: 'system-config', installMethod: 'service', command: 'sudo dnf5 install -y dnf5-plugin-automatic && sudo systemctl enable --now dnf-automatic.timer', revertible: true, requiresInput: null, needsVerification: false, depends_on: [], conflicts_with: [], desktops: 'any', supported_fedora: [], tags: ['dnf'] },
   { id: 'flathub-replace', label: 'Replace Fedora Flatpak Repo with Flathub', section: 'system-config', installMethod: 'flatpak', command: 'flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo', revertible: true, requiresInput: null, needsVerification: false, depends_on: [], conflicts_with: [], desktops: 'any', supported_fedora: [], tags: ['flatpak'] },
   { id: 'ssh', label: 'Install and Enable SSH', section: 'system-config', installMethod: 'service', command: 'sudo dnf5 install -y openssh-server && sudo systemctl enable --now sshd', revertible: true, requiresInput: null, needsVerification: false, depends_on: [], conflicts_with: [], desktops: 'any', supported_fedora: [], tags: ['ssh'] },
   { id: 'firmware-update', label: 'Update Firmware', section: 'system-config', installMethod: 'system', command: 'sudo fwupdmgr refresh && sudo fwupdmgr update -y', revertible: false, requiresInput: null, needsVerification: false, depends_on: [], conflicts_with: [], desktops: 'any', supported_fedora: [], tags: ['firmware'] },
@@ -193,7 +193,7 @@ const ITEM_RISK_REASONS = {
   anydesk: 'Enables remote control of the computer and may expose it to unauthorized access.',
   rustdesk: 'Enables remote control of the computer and may expose it to unauthorized access.',
   'configure-dnf': 'Changes DNF package-manager defaults.',
-  'dnf-autoupdate': 'Enables automatic system package updates through a persistent timer.',
+  'dnf-autoupdate': 'Enables scheduled DNF5 automatic updates. Fedora defaults to downloading updates without installing them.',
   'rpmfusion-repos': 'Adds third-party repositories and asks you to trust their package-signing keys.',
   'power-settings': 'Changes the active system power profile.',
   virtualization: 'Adds virtualization packages and system services.',
@@ -217,7 +217,7 @@ const ITEM_RISK_REASONS = {
 const ITEM_DESCRIPTIONS = {
   'set-hostname': 'Set the network-visible hostname for this Fedora computer.',
   'configure-dnf': 'Enable the selected DNF performance defaults.',
-  'dnf-autoupdate': 'Install DNF Automatic and enable its scheduled update timer.',
+  'dnf-autoupdate': 'Install the DNF5 Automatic plugin and enable its scheduled timer. Fedora defaults to downloading updates without installing them.',
   'flathub-replace': 'Replace the Fedora Flatpak source with Flathub.',
   ssh: 'Install the OpenSSH server and enable the sshd service.',
   'firmware-update': 'Check for and install available device firmware updates.',
@@ -234,7 +234,7 @@ const ITEM_DESCRIPTIONS = {
 };
 const REVERSIBLE_REASONS = {
   'set-hostname': 'The script records the previous static hostname and restores it on revert.',
-  'dnf-autoupdate': 'The script records whether it installed DNF Automatic and enabled its timer.',
+  'dnf-autoupdate': 'The script records whether it installed the DNF5 Automatic plugin and enabled its timer.',
   'rpmfusion-repos': 'The script removes RPM Fusion release packages only if it installed them.',
   'power-settings': 'The script records and restores the previous power profile.',
   'wake-on-lan': 'The script records and restores the previous Wake-on-LAN setting for the selected connection.',
