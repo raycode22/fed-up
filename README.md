@@ -1,64 +1,30 @@
-# Fed-up - Fedora Post-Install Script Generator
+# Fed-up
 
-A zero-build, static web application that generates a portable, interactive shell script (`setup.sh`) for Fedora Linux post-installation configurations.
+Fed-up is an independent, unofficial, static browser application that generates Fedora Linux setup and revert scripts. It is not affiliated with or endorsed by the Fedora Project or Red Hat.
 
-## Project Structure
+## Run locally
 
-```
-fed-up/
-├── index.html          # Modern HTML5 interface
-├── style.css           # Modern CSS (nesting, custom properties, :where() reset)
-├── app.js              # Vanilla JS script assembly engine (ES2024+)
-├── setup.sh            # Shell wrapper with pre-flight onboarding
-├── README.md           # This file
-```
+Open `index.html` in a modern browser, choose a Fedora release and desktop, select options, review the complete generated script, and download it. The site never executes commands on your computer. Generated scripts run only when you choose to run them.
 
-## Features
+The application has no framework, build step, backend, database, external runtime dependency, analytics, tracking, cookies, or network API. The only external links are opened if you choose to follow them. Browser storage is used locally for theme, text size, and selections.
 
-- **Zero-build**: No npm dependencies, no build tools, no frameworks
-- **GitHub Pages ready**: Deploy directly from `main` branch root
-- **Modern web standards**: HTML5 semantic elements, CSS nesting, ES2024+ modules
-- **dnf5 exclusive**: Uses native DNF5 syntax (no legacy yum)
-- **gum TUI**: Interactive terminal UI using Charm's gum components
-- **Python payload**: Embedded Python using `subprocess.run()` (no `os.system()`)
+## Script safety and limitations
 
-## Technologies
+- Generated scripts contain an embedded Python standard-library payload; they make no requests to this website at runtime.
+- The shell wrapper checks Fedora and installs missing `python3` and `flatpak` only when selected operations require it. The payload uses Python's standard library; pip is not required.
+- Charm `gum` is optional, presentation-only, and offered only from the configured Fedora repositories when available. Plain-text confirmations remain available.
+- System changes require administrator privileges. The payload passes subprocess arguments as lists and rejects malformed hostname and network-interface values.
+- A script has to be reviewed before running. Firmware updates, cleanup, package updates, DNF settings, and some network changes cannot be fully reversed.
+- Items marked **Needs verification** remain visible but are disabled for script generation until their official source and installation instructions are confirmed.
+- Catalog release applicability is not a guarantee that every package is available for every selected Fedora version. EOL releases may have unavailable repositories; confirm the generated package sources and Fedora's current support status before running a script.
+- The checked-in `setup.sh` is a retired launcher that deliberately exits; use the browser-generated download instead of executing a stale prebuilt script.
 
-### Frontend
-- HTML5 semantic elements (`<form>`, `<fieldset>`, `<legend>`, `<label>`, `<output>`, `<dialog>`)
-- Modern CSS: Nesting, Custom Properties, `:where()` reset, Flexbox/Grid
-- JavaScript: ES2024+ `<script type="module">`, `FormData`, `Blob`, `URL.createObjectURL()`
-- Clipboard API: `navigator.clipboard.writeText()` (no `document.execCommand`)
+## Data sources
 
-### Shell Wrapper
-- Shebang: `#!/usr/bin/env bash`
-- Strict mode: `set -euo pipefail`
-- Pre-flight banner with consent prompt (`[Y/n]`) before sudo
-- Deferred bootstrapping: `sudo dnf5 install -y python3 gum`
-- Single-quoted heredoc payload extraction
-- Signal trapping: `trap 'rm -f "$TEMP_PY"' EXIT INT TERM`
-
-### Python Payload
-- `subprocess.run(..., check=True, text=True)` with `CalledProcessError` handling
-- No `os.system()` usage
-
-## Deployment
-
-Deploy directly to GitHub Pages from the `main` branch root.
-
-1. Push all files to `main` branch
-2. Enable GitHub Pages in repository settings
-3. Select `main` branch as source
-4. Site is available at `https://<user>.github.io/fed-up/`
-
-## Usage
-
-1. Open `index.html` in a web browser
-2. Select desired post-installation options
-3. Click "Copy script" or "Download script" to get `setup.sh`
-4. Run `setup.sh` on your Fedora system
-5. Consent will be requested before any sudo operations
+- Fedora release status: [Fedora release EOL list](https://docs.fedoraproject.org/en-US/releases/eol/) and [Fedora 43 schedule](https://fedorapeople.org/groups/schedule/f-43/f-43-key-tasks.html), [Fedora 44 schedule](https://fedorapeople.org/groups/schedule/f-44/f-44-key-tasks.html). Fedora 41 and 42 are end of life; 43 and 44 are supported as of the current schedule.
+- Fedora visual reference: [fedoraproject.org](https://fedoraproject.org), including its published stylesheet. The interface uses the Fedora site's Open Sans typography and sampled blue palette; it does not use Fedora marks or branding.
+- Repository: [raycode22/fed-up](https://github.com/raycode22/fed-up)
 
 ## License
 
-MIT License
+This project is distributed under the MIT License. Inline interface icon glyphs are based on Lucide, distributed under the ISC License. No third-party app logos are reproduced.
