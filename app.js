@@ -577,7 +577,7 @@ import subprocess
 import sys
 
 parser = argparse.ArgumentParser(description="Fed-up Fedora setup script")
-parser.add_argument("--metadata", required=True)
+parser.add_argument("--metadata-file", required=True)
 parser.add_argument("--yes", action="store_true", help="Automatically approve confirmations")
 output_group = parser.add_mutually_exclusive_group()
 output_group.add_argument("--quiet", action="store_true", help="Suppress routine progress output")
@@ -586,8 +586,10 @@ parser.add_argument("--quit", action="store_true", help="Exit without running se
 args = parser.parse_args()
 
 try:
-    data = json.loads(base64.b64decode(args.metadata, validate=True).decode("utf-8"))
-except (ValueError, UnicodeDecodeError, json.JSONDecodeError) as error:
+    with open(args.metadata_file, encoding="ascii") as metadata_file:
+        encoded_metadata = metadata_file.read().strip()
+    data = json.loads(base64.b64decode(encoded_metadata, validate=True).decode("utf-8"))
+except (OSError, ValueError, UnicodeDecodeError, json.JSONDecodeError) as error:
     raise SystemExit(f"Invalid embedded configuration: {error}")
 
 version = data["version"]
@@ -1425,10 +1427,6 @@ else:
 `;
 }
 
-function pythonString(value) {
-  return `'${value.replace(/'/g, "'\\''")}'`;
-}
-
 function generatedScript(mode = state.activeScript) {
   if (mode === 'setup') {
     const invalid = collectInputs();
@@ -1528,12 +1526,15 @@ if ! command -v gum >/dev/null 2>&1; then
 fi
 
 payload_file=$(mktemp)
-trap 'rm -f "$payload_file"' EXIT
+metadata_file=$(mktemp)
+trap 'rm -f "$payload_file" "$metadata_file"' EXIT
 cat > "$payload_file" <<'${delimiter}'
 ${payload}
 ${delimiter}
-metadata=${pythonString(encoded)}
-python3 "$payload_file" --metadata "$metadata" "\${@}"
+cat > "$metadata_file" <<'FED_UP_METADATA_8f12b7a4'
+${encoded}
+FED_UP_METADATA_8f12b7a4
+python3 "$payload_file" --metadata-file "$metadata_file" "\${@}"
 `;
 }
 
