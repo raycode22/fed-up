@@ -35,6 +35,61 @@ const SECTION_ICONS = {
   customization: 'i-palette',
   'system-cleanup': 'i-clean',
 };
+const ITEM_TAG_ICONS = {
+  ai: 'i-sparkles',
+  appimage: 'i-apps',
+  archive: 'i-folder',
+  backup: 'i-backup',
+  browser: 'i-web',
+  chat: 'i-chat',
+  cleanup: 'i-clean',
+  cloud: 'i-cloud',
+  codecs: 'i-audio',
+  containers: 'i-box',
+  dev: 'i-code',
+  devops: 'i-tools',
+  dnf: 'i-tools',
+  download: 'i-download',
+  editor: 'i-code',
+  emulation: 'i-game',
+  firmware: 'i-chip',
+  flatpak: 'i-box',
+  fonts: 'i-type',
+  gaming: 'i-game',
+  git: 'i-branch',
+  gnome: 'i-system',
+  graphics: 'i-image',
+  mail: 'i-mail',
+  media: 'i-play',
+  mobile: 'i-phone',
+  network: 'i-network',
+  notes: 'i-document',
+  office: 'i-office',
+  password: 'i-key',
+  pdf: 'i-document',
+  power: 'i-power',
+  privacy: 'i-shield',
+  python: 'i-code',
+  remote: 'i-network',
+  repo: 'i-network',
+  security: 'i-shield',
+  sharing: 'i-share',
+  shell: 'i-terminal',
+  ssh: 'i-terminal',
+  streaming: 'i-video',
+  sync: 'i-sync',
+  system: 'i-system',
+  terminal: 'i-terminal',
+  theme: 'i-palette',
+  torrent: 'i-network',
+  translate: 'i-chat',
+  util: 'i-tools',
+  video: 'i-video',
+  virt: 'i-box',
+  vpn: 'i-shield',
+  webapp: 'i-web',
+  wine: 'i-box',
+};
 const SPECIAL_ACTIONS = {
   'set-hostname': { type: 'hostname' },
   'configure-dnf': { type: 'configure-dnf' },
@@ -194,7 +249,7 @@ function appendItemInput(container, item) {
     control = document.createElement('input');
     control.type = 'text';
     control.autocomplete = 'off';
-    control.placeholder = type === 'hostname' ? 'e.g. fedora-desktop' : 'e.g. enp1s0';
+    control.placeholder = type === 'hostname' ? 'e.g. fedora-desktop' : 'e.g. eno1';
     control.pattern = type === 'hostname'
       ? '[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?'
       : '[A-Za-z0-9][A-Za-z0-9_.:-]{0,14}';
@@ -282,7 +337,8 @@ function renderCategories() {
       const available = Boolean(itemAction(item));
       check.disabled = !compatible || !available;
       check.setAttribute('aria-describedby', `desc-${item.id}`);
-      const icon = svgIcon(item.icon || SECTION_ICONS[item.section] || 'i-info');
+      const iconSymbol = item.icon || (item.tags || []).map((tag) => ITEM_TAG_ICONS[tag]).find(Boolean) || SECTION_ICONS[item.section] || 'i-info';
+      const icon = svgIcon(iconSymbol, 'icon item-icon');
       const main = document.createElement('div');
       main.className = 'item-main';
       const itemTitle = document.createElement('label');
@@ -373,11 +429,43 @@ function systemTheme() {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
+let faviconImage;
+let faviconTheme = 'light';
+
+function renderFavicon(theme) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 64;
+  const context = canvas.getContext('2d');
+  if (!context) {
+    console.error('Unable to create a canvas context for the site favicon.');
+    return;
+  }
+  context.drawImage(faviconImage, 0, 0, canvas.width, canvas.height);
+  context.globalCompositeOperation = 'source-in';
+  context.fillStyle = theme === 'dark' ? '#51a2da' : '#294172';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  document.getElementById('site-favicon').href = canvas.toDataURL('image/png');
+}
+
+function updateFavicon(theme) {
+  faviconTheme = theme;
+  if (faviconImage) {
+    if (faviconImage.complete && faviconImage.naturalWidth > 0) renderFavicon(faviconTheme);
+    return;
+  }
+  faviconImage = new Image();
+  faviconImage.onload = () => renderFavicon(faviconTheme);
+  faviconImage.onerror = () => console.error('Unable to load the site favicon from assets/Fed-up.svg.');
+  faviconImage.src = 'assets/Fed-up.svg';
+}
+
 function applyTheme() {
   state.theme = elements['theme-select'].value;
   if (state.theme === 'system') delete document.documentElement.dataset.theme;
   else document.documentElement.dataset.theme = state.theme;
   const resolved = state.theme === 'system' ? systemTheme() : state.theme;
+  updateFavicon(resolved);
   for (const meta of document.querySelectorAll('meta[name="theme-color"]')) {
     const active = meta.media.includes(resolved);
     if (active) meta.removeAttribute('media');
@@ -857,7 +945,7 @@ function closeDialog(id) {
 }
 
 function setNavigationOpen(open) {
-  const nav = document.querySelector('.site-nav');
+  const nav = document.querySelector('.site-header');
   const toggle = document.getElementById('nav-toggle');
   nav.classList.toggle('nav-open', open);
   toggle.setAttribute('aria-expanded', String(open));
