@@ -3,10 +3,3 @@ __pycache__/
 venv/
 .env
 .pytest_cache/
-web/data.json
-*.md
-!README.md
-!docs/*.md
-!CONTRIBUTING.md
-!CHANGELOG.md
-!LICENSE
