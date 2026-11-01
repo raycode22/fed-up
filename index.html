@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self';" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#294172" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)" />
+    <meta name="description" content="Choose Fedora setup options and build a custom system setup shell script." />
+    <title>Fed-up | Fedora Post-Install Script Generator</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div class="app-layout">
+      <header class="site-header">
+        <div class="container header-content">
+          <a class="brand" href="#top" aria-label="Fed-up home">
+            <span class="brand-icon" aria-hidden="true"></span>
+            <span>Fed-up</span>
+          </a>
+          <nav class="header-actions" aria-label="Main navigation">
+            <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to dark mode" title="Switch to dark mode">
+              <span aria-hidden="true">☾</span>
+            </button>
+          </nav>
+        </div>
+      </header>
+      <main id="main-content" class="container layout">
+        <section class="options-pane" id="setup">
+          <h1 id="top">Fedora Post-Install Script</h1>
+          <p class="subtitle">Select options; the generated script stays on the right.</p>
+          <form id="options-form" class="options-form">
+            <fieldset>
+              <legend>System</legend>
+              <div class="form-row">
+                <label for="desktop-select">Desktop</label>
+                <select id="desktop-select" name="desktop">
+                  <option value="any">Any / detect</option>
+                  <option value="gnome">GNOME</option>
+                  <option value="kde">KDE Plasma</option>
+                  <option value="xfce">XFCE</option>
+                </select>
+                <label for="fedora-version">Fedora</label>
+                <input id="fedora-version" name="fedora" type="number" min="40" max="49" value="41" />
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend>Categories</legend>
+              <div id="category-list" class="category-list"></div>
+            </fieldset>
+            <div class="selection-summary">
+              <output id="item-count" for="options-form">0 items selected</output>
+            </div>
+          </form>
+        </section>
+        <aside class="script-sticky" id="script">
+          <h2 id="script-heading">Generated Script</h2>
+          <p id="script-description" class="subtitle">Your custom Fedora post-installation shell script</p>
+          <div class="script-panel">
+            <div class="script-preview" id="script-preview">
+              <p>Make your selections to generate the script.</p>
+            </div>
+            <div class="selection-controls">
+              <label for="script-mode" class="visually-hidden">Script mode</label>
+              <select id="script-mode" class="script-mode">
+                <option value="setup">Setup script (setup.sh)</option>
+                <option value="cleanup">Cleanup script (fedora-cleanup.sh)</option>
+                <option value="revert">Revert script (fed-up-revert.sh)</option>
+              </select>
+            </div>
+            <button class="button" id="copy-script" type="button">Copy script to clipboard <span id="copy-status" class="copy-status"></span></button>
+            <button class="button button-secondary" id="download-script" type="button">Download script as <span id="download-filename">setup.sh</span></button>
+          </div>
+        </aside>
+      </main>
+    </div>
+    <footer class="site-footer">
+      <div class="container footer-content">
+        <ul><li><span>Ray Code</span></li><li>Powered by <a href="https://pages.github.com/">GitHub Pages</a></li></ul>
+      </div>
+    </footer>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
