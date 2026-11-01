@@ -13,6 +13,7 @@ The application has no framework, build step, backend, database, external runtim
 - Generated scripts contain an embedded Python standard-library payload; they make no requests to this website at runtime.
 - The shell wrapper checks Fedora and installs missing `python3` and `flatpak` only when selected operations require it. The payload uses Python's standard library; pip is not required.
 - Charm `gum` is optional, presentation-only, and offered only from the configured Fedora repositories when available. Plain-text confirmations remain available.
+- The DNF automatic-update option installs Fedora's `dnf5-plugin-automatic` and enables `dnf-automatic.timer`. Fedora's default configuration downloads updates without installing them; review `/etc/dnf/automatic.conf` before changing that behavior. See Fedora's [automatic updates guide](https://docs.fedoraproject.org/en-US/quick-docs/autoupdates/).
 - System changes require administrator privileges. The payload passes subprocess arguments as lists and rejects malformed hostname and network-interface values.
 - A script has to be reviewed before running. Firmware updates, cleanup, package updates, DNF settings, and some network changes cannot be fully reversed.
 - Items marked **Needs verification** remain visible but are disabled for script generation until their official source and installation instructions are confirmed.
