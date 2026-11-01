@@ -211,7 +211,7 @@
     <dialog id="how-to-dialog" aria-labelledby="how-to-title">
       <form method="dialog" class="dialog-close-row"><button class="icon-button" aria-label="Close dialog"><svg class="icon" aria-hidden="true"><use href="#i-close" /></svg></button></form>
       <h2 id="how-to-title">How to use Fed-up</h2>
-      <ol><li>Select the Fedora release and desktop environment.</li><li>Choose options and provide any requested values.</li><li>Review the complete install or revert script and its warnings.</li><li>Copy or download the script. It runs only if you choose to run it yourself.</li></ol>
+      <ol><li>Select the Fedora release and desktop environment.</li><li>Choose options and provide any requested values.</li><li>Review the complete install or revert script and its warnings.</li><li>When the installer runs in a terminal, review or change its verified selections, then inspect risk, requirements, sources, and documentation links.</li><li>Copy or download the script. It runs only if you choose to run it yourself.</li></ol>
     </dialog>
     <dialog id="about-dialog" aria-labelledby="about-title">
       <form method="dialog" class="dialog-close-row"><button class="icon-button" aria-label="Close dialog"><svg class="icon" aria-hidden="true"><use href="#i-close" /></svg></button></form>
@@ -219,7 +219,7 @@
       <ul>
         <li>This static site has no analytics or tracking, and does not send your selections or preferences anywhere. It uses no cookies; theme, text size, and selections are stored locally in your browser where storage is available.</li>
         <li>The website never runs commands. It generates scripts for you to inspect, copy, download, and run yourself.</li>
-        <li>The generated script may install <code>python3</code>, Fedora's optional <code>gum</code> text UI, and <code>flatpak</code> when selected items require it, plus your chosen software. Python packages are not installed with pip. gum is optional and is never installed from a third-party repository by this generator.</li>
+        <li>The generated script may install <code>python3</code>, Fedora's optional <code>gum</code> text UI, and <code>flatpak</code> only when an action chosen in the installer requires it, plus your chosen software. Python packages are not installed with pip. gum is optional and is never installed from a third-party repository by this generator.</li>
         <li>Software sources and any non-reversible operations are identified in the generated script. Review it before running; system changes require administrator privileges.</li>
         <li><a href="https://github.com/raycode22/fed-up" target="_blank" rel="noopener noreferrer">Source code</a> is available under the MIT License.</li>
         <li>This is an independent, unofficial project and is not affiliated with or endorsed by the Fedora Project or Red Hat. Provided as is.</li>
