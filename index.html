@@ -9,6 +9,7 @@
     <meta name="description" content="An independent, unofficial Fedora setup script generator. Review scripts before running them." />
     <title>Fed-up | Fedora Setup Script Generator</title>
     <script>try{const t=localStorage.getItem("fed-up:theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch{}</script>
+    <link id="site-favicon" rel="icon" type="image/svg+xml" href="assets/Fed-up.svg" />
     <link rel="stylesheet" href="style.css" />
     <script type="module" src="app.js"></script>
   </head>
@@ -44,32 +45,45 @@
       <symbol id="i-tools" viewBox="0 0 24 24"><path d="M14 7a5 5 0 0 0-6-6l3 3-3 3-3-3a5 5 0 0 0 6 6l8 8a2 2 0 0 0 3-3z" /></symbol>
       <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18h1a2 2 0 0 0 1-3.7 1.5 1.5 0 0 1 1-2.8H17a4 4 0 0 0 4-4c0-4.1-4-7.5-9-7.5Z" /><path d="M7.5 10h.01m3-3h.01m5 1h.01" /></symbol>
       <symbol id="i-clean" viewBox="0 0 24 24"><path d="m3 17 9-9 4 4-9 9H3zM14 6l3-3 4 4-3 3m-7 4 3 3" /></symbol>
+      <symbol id="i-box" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z" /><path d="M3 8v9l9 5 9-5V8m-9 5v9" /></symbol>
+      <symbol id="i-chip" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" /><path d="M9 9h6v6H9zM9 2v4m6-4v4M9 18v4m6-4v4M2 9h4m-4 6h4m12-6h4m-4 6h4" /></symbol>
+      <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 2v10" /><path d="M7 5.5a8 8 0 1 0 10 0" /></symbol>
+      <symbol id="i-sync" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5" /><path d="M5.6 9A7 7 0 0 1 18 6l2 6M4 12l2 6a7 7 0 0 0 12.4-3" /></symbol>
+      <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></symbol>
+      <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 9 9 0 0 1-4-.9L3 21l1.9-5.5a9 9 0 0 1-.9-4A8.5 8.5 0 0 1 12.5 3H13a8.5 8.5 0 0 1 8 8v.5Z" /></symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z" /><path d="m9 12 2 2 4-4" /></symbol>
+      <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="5" /><path d="m11.5 11.5 9-9 2 2-2 2 2 2-3 3-2-2-4.5 4.5" /></symbol>
+      <symbol id="i-branch" viewBox="0 0 24 24"><circle cx="6" cy="3" r="2" /><circle cx="6" cy="21" r="2" /><circle cx="18" cy="6" r="2" /><path d="M6 5v14m12-11a6 6 0 0 1-6 6H8" /></symbol>
+      <symbol id="i-phone" viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2" /><path d="M11 18h2" /></symbol>
+      <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="m21 15-5-5L5 21" /></symbol>
+      <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M20 16.5A4.5 4.5 0 0 0 18 8h-1.3A7 7 0 1 0 5 17h13" /></symbol>
+      <symbol id="i-backup" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5m4-1v5l4 2" /></symbol>
+      <symbol id="i-document" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z" /><path d="M14 3v5h5M9 13h7m-7 4h7" /></symbol>
+      <symbol id="i-type" viewBox="0 0 24 24"><path d="M4 7V4h16v3M9 20h6m-3-16v16" /></symbol>
+      <symbol id="i-audio" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></symbol>
+      <symbol id="i-video" viewBox="0 0 24 24"><rect x="3" y="5" width="13" height="14" rx="2" /><path d="m16 10 5-3v10l-5-3" /></symbol>
+      <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="m8.6 10.5 6.8-4m-6.8 7 6.8 4" /></symbol>
     </svg>
     <a class="skip-link" href="#main-content">Skip to content</a>
     <header class="site-header" id="top">
       <div class="header-inner">
         <div class="brand">
-          <a class="brand-name" href="#top">Fed-up</a>
-          <p>Build a Fedora setup script you can review first.</p>
-        </div>
-        <label class="version-field" for="fedora-version">
-          <span>Fedora version</span>
-          <select id="fedora-version" name="fedora-version"></select>
-          <span id="version-chip" class="badge badge-eol" hidden>End of life</span>
-        </label>
-      </div>
-      <p class="version-warning" id="version-warning" aria-live="polite" hidden></p>
-    </header>
-    <nav class="site-nav" aria-label="Main navigation">
-      <div class="nav-inner">
-        <button class="nav-toggle button" id="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links">Menu</button>
-        <div class="nav-links" id="nav-links">
-          <a class="nav-link" href="#options" aria-current="location">Select Options</a>
-          <button class="nav-link" id="how-to-button" type="button">How to Use</button>
-          <a class="nav-link" id="github-link" href="https://github.com/raycode22/fed-up" target="_blank" rel="noopener noreferrer" aria-label="GitHub repository (opens in a new tab)">
-            GitHub <svg class="icon" aria-hidden="true"><use href="#i-external" /></svg>
+          <a class="brand-link" href="#top">
+            <span class="brand-mark" aria-hidden="true"></span>
+            <span class="brand-name">Fed-up</span>
           </a>
-          <label class="theme-field" for="theme-select">
+        </div>
+        <button class="nav-toggle button" id="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links">
+          <svg class="icon" aria-hidden="true"><use href="#i-apps" /></svg>Menu
+        </button>
+        <nav class="nav-links" id="nav-links" aria-label="Main navigation">
+          <a class="nav-link" href="#options" aria-current="location"><svg class="icon" aria-hidden="true"><use href="#i-apps" /></svg>Select Options</a>
+          <button class="nav-link" id="how-to-button" type="button"><svg class="icon" aria-hidden="true"><use href="#i-info" /></svg>How to Use</button>
+          <a class="nav-link" id="github-link" href="https://github.com/raycode22/fed-up" target="_blank" rel="noopener noreferrer" aria-label="GitHub repository (opens in a new tab)">
+            <svg class="icon" aria-hidden="true"><use href="#i-code" /></svg>GitHub
+          </a>
+          <label class="theme-field nav-link" for="theme-select">
+            <svg class="icon" aria-hidden="true"><use href="#i-palette" /></svg>
             <span class="visually-hidden">Color theme</span>
             <select id="theme-select" aria-label="Color theme">
               <option value="system">System theme</option>
@@ -77,26 +91,36 @@
               <option value="dark">Dark theme</option>
             </select>
           </label>
-        </div>
+        </nav>
       </div>
-    </nav>
+    </header>
     <main id="main-content" class="page-layout">
       <section id="options" class="options-pane" aria-labelledby="page-title" tabindex="-1">
-        <div class="intro">
-          <p class="eyebrow">Independent, unofficial community tool</p>
-          <h1 id="page-title">Choose your setup</h1>
-          <p>Choose software and system changes. Nothing runs from this website; inspect the generated scripts before running them.</p>
-        </div>
-        <aside class="notice notice-info" aria-labelledby="privacy-title">
-          <svg class="icon" aria-hidden="true"><use href="#i-info" /></svg>
-          <div><h2 id="privacy-title">About and privacy</h2>
-            <p>This site has no analytics or tracking. Your selections and preferences stay in your browser. Generated scripts may install software from Fedora, Flathub or the listed vendor sources; review them before use.</p>
-            <button type="button" class="text-button" id="about-button">Full privacy and license details</button>
+        <section class="hero-section" aria-labelledby="page-title">
+          <div class="intro">
+            <p class="eyebrow">Independent community tool</p>
+            <h1 id="page-title" aria-label="Fed-up"><span class="title-morph" aria-hidden="true"><span class="title-highlight">Fed</span><span class="title-middle">ora Set</span><span class="title-joiner">-</span><span class="title-highlight">up</span></span></h1>
+            <h4>Choose software and system changes. 
+              <br>Nothing runs from this website; inspect the generated scripts before running them.</h4>
           </div>
-        </aside>
+          <aside class="notice notice-info" aria-labelledby="privacy-title">
+            <svg class="icon" aria-hidden="true"><use href="#i-info" /></svg>
+            <div><h2 id="privacy-title">About and privacy</h2>
+              <p>No analytics, tracking or cookies. Your selections stay in this browser. Generated scripts may install software from Fedora, Flathub or vendors; review them before use.</p>
+              <button type="button" class="text-button" id="about-button">Full privacy and license details</button>
+            </div>
+          </aside>
+        </section>
         <form id="options-form" class="options-form">
           <fieldset class="settings-card">
             <legend>System preferences</legend>
+            <label class="version-setting-label" for="fedora-version">
+              <svg class="icon" aria-hidden="true"><use href="#i-system" /></svg>
+              Fedora version
+              <span id="version-chip" class="badge badge-eol" hidden>End of life</span>
+            </label>
+            <select id="fedora-version" name="fedora-version"></select>
+            <p class="version-warning" id="version-warning" aria-live="polite" hidden></p>
             <label for="desktop-select">Desktop environment</label>
             <select id="desktop-select" name="desktop">
               <option value="gnome">GNOME (Workstation)</option>
@@ -175,6 +199,10 @@
     </main>
     <footer class="site-footer">
       <div class="footer-inner">
+        <a class="brand-link" href="#top">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span class="brand-name">Fed-up</span>
+        </a>
         <p><strong>Fed-up</strong> is an independent, unofficial project. It is not affiliated with or endorsed by the Fedora Project or Red Hat. Provided as is.</p>
         <p><a href="https://github.com/raycode22/fed-up" target="_blank" rel="noopener noreferrer">Open-source project (MIT License)</a></p>
         <p class="small-note">Interface icons: Lucide, ISC License.</p>
