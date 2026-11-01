@@ -985,7 +985,6 @@ def find_conflicts(selected):
                     seen.add(pair)
                     pairs.append(pair)
     for group in (
-        ("firefox", "google-chrome", "chromium", "brave", "vivaldi", "microsoft-edge", "librewolf", "opera", "zen-browser"),
         ("libreoffice", "onlyoffice", "wps-office"),
         ("docker", "podman"),
     ):
@@ -1661,9 +1660,7 @@ function detectConflicts(ids = state.selected) {
   ]) {
     if (selected.has(left) && selected.has(right)) conflicts.push(label);
   }
-  const browserIds = ['firefox', 'google-chrome', 'chromium', 'brave', 'vivaldi', 'microsoft-edge', 'librewolf', 'opera', 'zen-browser'];
   const officeIds = ['libreoffice', 'onlyoffice', 'wps-office'];
-  if (browserIds.filter((id) => selected.has(id)).length > 1) conflicts.push('multiple browsers');
   if (officeIds.filter((id) => selected.has(id)).length > 1) conflicts.push('multiple office suites');
   return conflicts;
 }
