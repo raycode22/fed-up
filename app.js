@@ -18,6 +18,7 @@ const STORAGE_KEYS = {
   textSize: 'fed-up:script-text-size',
   selections: 'fed-up:selections',
 };
+const SCRIPT_TEXT_SIZE = { default: 0.9, min: 0.75, max: 1.15 };
 const RISK_LABELS = { critical: 'Critical', high: 'High caution', caution: 'Caution', safe: 'Safe' };
 const RISK_ICONS = { critical: 'i-critical', high: 'i-high', caution: 'i-caution', safe: 'i-safe' };
 const SECTION_ICONS = {
@@ -116,7 +117,7 @@ const state = {
   desktop: 'gnome',
   outputMode: 'quiet',
   theme: 'system',
-  textSize: 1,
+  textSize: SCRIPT_TEXT_SIZE.default,
   activeScript: 'setup',
   expanded: false,
   pendingCritical: null,
@@ -1472,7 +1473,7 @@ for arg in "$@"; do
   fi
 done
 
-# Fed-up standalone Fedora ${state.version} script
+# Fed - up standalone Fedora ${state.version} script
 # Desktop: ${state.desktop === 'gnome' ? 'GNOME (Workstation)' : 'KDE Plasma'}
 # Output mode: ${state.outputMode}
 # Review this script before running it. It may change your system.
@@ -1539,12 +1540,13 @@ python3 "$payload_file" --metadata-file "$metadata_file" "\${@}"
 
 function updateScriptPreview() {
   const mode = state.activeScript;
+  const selected = CATALOG_ITEMS.filter((item) => state.selected.has(item.id));
   for (const tab of [elements['install-tab'], elements['revert-tab']]) {
     const active = tab.dataset.scriptTab === mode;
     tab.setAttribute('aria-selected', String(active));
     tab.tabIndex = active ? 0 : -1;
   }
-  const irreversible = CATALOG_ITEMS.filter((item) => state.selected.has(item.id) && !item.revertible);
+  const irreversible = selected.filter((item) => !item.revertible);
   elements['revert-warning'].hidden = mode !== 'revert' || irreversible.length === 0;
   if (irreversible.length) {
     elements['revert-warning'].textContent = `Not reliably reversible: ${irreversible.map((item) => `${item.label} — ${item.revertReason}`).join(' ')}`;
@@ -1552,8 +1554,8 @@ function updateScriptPreview() {
   elements['script-code'].textContent = generatedScript(mode);
   elements['script-preview'].classList.toggle('wrap', elements['wrap-toggle'].checked);
   elements['script-preview'].style.fontSize = `calc(var(--script-size) * ${state.textSize})`;
-  const selected = CATALOG_ITEMS.filter((item) => state.selected.has(item.id));
-  const counts = Object.fromEntries(['critical', 'high', 'caution', 'safe'].map((risk) => [risk, selected.filter((item) => item.risk === risk).length]));
+  const counts = { critical: 0, high: 0, caution: 0, safe: 0 };
+  for (const item of selected) counts[item.risk] += 1;
   elements['risk-summary'].replaceChildren();
   for (const risk of Object.keys(RISK_LABELS)) {
     const count = document.createElement('span');
@@ -1667,7 +1669,10 @@ function detectConflicts(ids = state.selected) {
 
 function init() {
   state.theme = readStorage(STORAGE_KEYS.theme, 'system');
-  state.textSize = Math.min(1.25, Math.max(.85, Number(readStorage(STORAGE_KEYS.textSize, '1')) || 1));
+  state.textSize = Math.min(SCRIPT_TEXT_SIZE.max, Math.max(
+    SCRIPT_TEXT_SIZE.min,
+    Number(readStorage(STORAGE_KEYS.textSize, String(SCRIPT_TEXT_SIZE.default))) || SCRIPT_TEXT_SIZE.default,
+  ));
   elements['theme-select'].value = ['system', 'light', 'dark'].includes(state.theme) ? state.theme : 'system';
   elements['desktop-select'].value = state.desktop;
   elements['output-mode'].value = state.outputMode;
@@ -1757,7 +1762,7 @@ function init() {
     state.selected.clear();
     state.inputs = {};
     state.theme = 'system';
-    state.textSize = 1;
+    state.textSize = SCRIPT_TEXT_SIZE.default;
     for (const key of Object.values(STORAGE_KEYS)) {
       try { localStorage.removeItem(key); } catch { /* Storage can be disabled. */ }
     }
@@ -1809,7 +1814,11 @@ function init() {
   elements['revert-tab'].addEventListener('click', () => { state.activeScript = 'revert'; updateScriptPreview(); });
   elements['text-smaller'].addEventListener('click', () => changeTextSize(-.1));
   elements['text-larger'].addEventListener('click', () => changeTextSize(.1));
-  elements['text-reset'].addEventListener('click', () => { state.textSize = 1; updateScriptPreview(); persistState(); });
+  elements['text-reset'].addEventListener('click', () => {
+    state.textSize = SCRIPT_TEXT_SIZE.default;
+    updateScriptPreview();
+    persistState();
+  });
   elements['script-expand'].addEventListener('click', toggleExpanded);
   elements['mobile-expand-script'].addEventListener('click', toggleExpanded);
   document.getElementById('nav-toggle').addEventListener('click', (event) => {
@@ -1884,7 +1893,10 @@ async function copyCurrentScript() {
 }
 
 function changeTextSize(delta) {
-  state.textSize = Math.min(1.25, Math.max(.85, Math.round((state.textSize + delta) * 100) / 100));
+  state.textSize = Math.min(
+    SCRIPT_TEXT_SIZE.max,
+    Math.max(SCRIPT_TEXT_SIZE.min, Math.round((state.textSize + delta) * 100) / 100),
+  );
   updateScriptPreview();
   persistState();
 }
