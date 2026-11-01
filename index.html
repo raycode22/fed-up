@@ -2,84 +2,218 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self';" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self' 'sha256-i6y8CUV2zrax5zldg1SrrGvjPr4ymLEvl4lSWKVuXbI='; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#294172" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)" />
-    <meta name="description" content="Choose Fedora setup options and build a custom system setup shell script." />
-    <title>Fed-up | Fedora Post-Install Script Generator</title>
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#121820" media="(prefers-color-scheme: dark)" />
+    <meta name="description" content="An independent, unofficial Fedora setup script generator. Review scripts before running them." />
+    <title>Fed-up | Fedora Setup Script Generator</title>
+    <script>try{const t=localStorage.getItem("fed-up:theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch{}</script>
     <link rel="stylesheet" href="style.css" />
+    <script type="module" src="app.js"></script>
   </head>
   <body>
+    <svg class="icon-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6" /></symbol>
+      <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="13" rx="2" /><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h3" /></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5M12 15V3" /></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42" /></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.9 13A9 9 0 0 1 11 3.1 9 9 0 1 0 20.9 13Z" /></symbol>
+      <symbol id="i-system" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20h8m-4-4v4" /></symbol>
+      <symbol id="i-safe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /></symbol>
+      <symbol id="i-caution" viewBox="0 0 24 24"><path d="m12 3 10 18H2L12 3Z" /><path d="M12 9v5m0 3h.01" /></symbol>
+      <symbol id="i-high" viewBox="0 0 24 24"><path d="M12 2 22 12 12 22 2 12 12 2Z" /><path d="M12 8v5m0 3h.01" /></symbol>
+      <symbol id="i-critical" viewBox="0 0 24 24"><path d="M12 2 22 20H2L12 2Z" /><path d="M12 9v4m0 3h.01" /></symbol>
+      <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 11v5m0-8h.01" /></symbol>
+      <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 3h7v7m0-7L10 14" /><path d="M19 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6" /></symbol>
+      <symbol id="i-reset" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /></symbol>
+      <symbol id="i-expand" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m13-5v3a2 2 0 0 1-2 2h-3" /></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="m18 6-12 12M6 6l12 12" /></symbol>
+      <symbol id="i-terminal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="m7 9 3 3-3 3m6 0h4" /></symbol>
+      <symbol id="i-apps" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></symbol>
+      <symbol id="i-web" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18" /></symbol>
+      <symbol id="i-office" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z" /><path d="M14 3v5h5M9 13h7m-7 4h7" /></symbol>
+      <symbol id="i-code" viewBox="0 0 24 24"><path d="m8 8-4 4 4 4m8-8 4 4-4 4m-3-11-2 14" /></symbol>
+      <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Zm7 12 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15Z" /></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="m8 5 12 7-12 7z" /></symbol>
+      <symbol id="i-game" viewBox="0 0 24 24"><path d="M6 9h12a4 4 0 0 1 3.8 5.3l-1 3a2 2 0 0 1-3.2.9L14 15h-4l-3.6 3.2a2 2 0 0 1-3.2-.9l-1-3A4 4 0 0 1 6 9Z" /><path d="M7 11v4m-2-2h4m7-1h.01m3 2h.01" /></symbol>
+      <symbol id="i-network" viewBox="0 0 24 24"><circle cx="12" cy="18" r="2" /><path d="M5 11a10 10 0 0 1 14 0m-11 3a6 6 0 0 1 8 0m-4-10v9" /></symbol>
+      <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></symbol>
+      <symbol id="i-tools" viewBox="0 0 24 24"><path d="M14 7a5 5 0 0 0-6-6l3 3-3 3-3-3a5 5 0 0 0 6 6l8 8a2 2 0 0 0 3-3z" /></symbol>
+      <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18h1a2 2 0 0 0 1-3.7 1.5 1.5 0 0 1 1-2.8H17a4 4 0 0 0 4-4c0-4.1-4-7.5-9-7.5Z" /><path d="M7.5 10h.01m3-3h.01m5 1h.01" /></symbol>
+      <symbol id="i-clean" viewBox="0 0 24 24"><path d="m3 17 9-9 4 4-9 9H3zM14 6l3-3 4 4-3 3m-7 4 3 3" /></symbol>
+    </svg>
     <a class="skip-link" href="#main-content">Skip to content</a>
-    <div class="app-layout">
-      <header class="site-header">
-        <div class="container header-content">
-          <a class="brand" href="#top" aria-label="Fed-up home">
-            <span class="brand-icon" aria-hidden="true"></span>
-            <span>Fed-up</span>
-          </a>
-          <nav class="header-actions" aria-label="Main navigation">
-            <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to dark mode" title="Switch to dark mode">
-              <span aria-hidden="true">☾</span>
-            </button>
-          </nav>
+    <header class="site-header" id="top">
+      <div class="header-inner">
+        <div class="brand">
+          <a class="brand-name" href="#top">Fed-up</a>
+          <p>Build a Fedora setup script you can review first.</p>
         </div>
-      </header>
-      <main id="main-content" class="container layout">
-        <section class="options-pane" id="setup">
-          <h1 id="top">Fedora Post-Install Script</h1>
-          <p class="subtitle">Select options; the generated script stays on the right.</p>
-          <form id="options-form" class="options-form">
-            <fieldset>
-              <legend>System</legend>
-              <div class="form-row">
-                <label for="desktop-select">Desktop</label>
-                <select id="desktop-select" name="desktop">
-                  <option value="any">Any / detect</option>
-                  <option value="gnome">GNOME</option>
-                  <option value="kde">KDE Plasma</option>
-                  <option value="xfce">XFCE</option>
-                </select>
-                <label for="fedora-version">Fedora</label>
-                <input id="fedora-version" name="fedora" type="number" min="40" max="49" value="41" />
-              </div>
-            </fieldset>
-            <fieldset>
-              <legend>Categories</legend>
-              <div id="category-list" class="category-list"></div>
-            </fieldset>
-            <div class="selection-summary">
-              <output id="item-count" for="options-form">0 items selected</output>
-            </div>
-          </form>
-        </section>
-        <aside class="script-sticky" id="script">
-          <h2 id="script-heading">Generated Script</h2>
-          <p id="script-description" class="subtitle">Your custom Fedora post-installation shell script</p>
-          <div class="script-panel">
-            <div class="script-preview" id="script-preview">
-              <p>Make your selections to generate the script.</p>
-            </div>
-            <div class="selection-controls">
-              <label for="script-mode" class="visually-hidden">Script mode</label>
-              <select id="script-mode" class="script-mode">
-                <option value="setup">Setup script (setup.sh)</option>
-                <option value="cleanup">Cleanup script (fedora-cleanup.sh)</option>
-                <option value="revert">Revert script (fed-up-revert.sh)</option>
-              </select>
-            </div>
-            <button class="button" id="copy-script" type="button">Copy script to clipboard <span id="copy-status" class="copy-status"></span></button>
-            <button class="button button-secondary" id="download-script" type="button">Download script as <span id="download-filename">setup.sh</span></button>
+        <label class="version-field" for="fedora-version">
+          <span>Fedora version</span>
+          <select id="fedora-version" name="fedora-version"></select>
+          <span id="version-chip" class="badge badge-eol" hidden>End of life</span>
+        </label>
+      </div>
+      <p class="version-warning" id="version-warning" aria-live="polite" hidden></p>
+    </header>
+    <nav class="site-nav" aria-label="Main navigation">
+      <div class="nav-inner">
+        <button class="nav-toggle button" id="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links">Menu</button>
+        <div class="nav-links" id="nav-links">
+          <a class="nav-link" href="#options" aria-current="location">Select Options</a>
+          <button class="nav-link" id="how-to-button" type="button">How to Use</button>
+          <a class="nav-link" id="github-link" href="https://github.com/raycode22/fed-up" target="_blank" rel="noopener noreferrer" aria-label="GitHub repository (opens in a new tab)">
+            GitHub <svg class="icon" aria-hidden="true"><use href="#i-external" /></svg>
+          </a>
+          <label class="theme-field" for="theme-select">
+            <span class="visually-hidden">Color theme</span>
+            <select id="theme-select" aria-label="Color theme">
+              <option value="system">System theme</option>
+              <option value="light">Light theme</option>
+              <option value="dark">Dark theme</option>
+            </select>
+          </label>
+        </div>
+      </div>
+    </nav>
+    <main id="main-content" class="page-layout">
+      <section id="options" class="options-pane" aria-labelledby="page-title" tabindex="-1">
+        <div class="intro">
+          <p class="eyebrow">Independent, unofficial community tool</p>
+          <h1 id="page-title">Choose your setup</h1>
+          <p>Choose software and system changes. Nothing runs from this website; inspect the generated scripts before running them.</p>
+        </div>
+        <aside class="notice notice-info" aria-labelledby="privacy-title">
+          <svg class="icon" aria-hidden="true"><use href="#i-info" /></svg>
+          <div><h2 id="privacy-title">About and privacy</h2>
+            <p>This site has no analytics or tracking. Your selections and preferences stay in your browser. Generated scripts may install software from Fedora, Flathub or the listed vendor sources; review them before use.</p>
+            <button type="button" class="text-button" id="about-button">Full privacy and license details</button>
           </div>
         </aside>
-      </main>
-    </div>
+        <form id="options-form" class="options-form">
+          <fieldset class="settings-card">
+            <legend>System preferences</legend>
+            <label for="desktop-select">Desktop environment</label>
+            <select id="desktop-select" name="desktop">
+              <option value="gnome">GNOME (Workstation)</option>
+              <option value="kde">KDE Plasma</option>
+            </select>
+            <label for="output-mode">Output mode</label>
+            <select id="output-mode" name="output-mode">
+              <option value="quiet">Quiet</option>
+              <option value="verbose">Verbose</option>
+            </select>
+          </fieldset>
+          <div class="global-actions" aria-label="Selection actions">
+            <button type="button" class="button button-primary" id="select-recommended">Select recommended</button>
+            <button type="button" class="button" id="select-all">Select all</button>
+            <button type="button" class="button" id="clear-all">Clear all</button>
+            <button type="button" class="button" id="expand-all">Expand all</button>
+            <button type="button" class="button button-destructive" id="reset-selections">Reset selections</button>
+          </div>
+          <label class="search-field" for="search-options">
+            <svg class="icon" aria-hidden="true"><use href="#i-search" /></svg>
+            <span class="visually-hidden">Search options and apps</span>
+            <input id="search-options" type="search" placeholder="Search options and apps" autocomplete="off" />
+            <button id="clear-search" type="button" aria-label="Clear search">Clear</button>
+          </label>
+          <p id="search-count" class="sr-status" aria-live="polite"></p>
+          <div id="risk-legend" class="risk-legend" aria-label="Risk level legend"></div>
+          <div id="category-list" class="category-list"></div>
+          <p id="no-results" class="empty-state" hidden>No matching options. Try another search.</p>
+        </form>
+      </section>
+      <aside class="script-panel" id="script-panel" aria-labelledby="script-heading">
+        <div class="mobile-script-bar">
+          <strong id="mobile-selected-count" aria-live="polite">0 selected</strong>
+          <button type="button" class="button button-primary" id="mobile-copy-script">Copy</button>
+          <button type="button" class="icon-button" id="mobile-expand-script" aria-label="Expand script panel"><svg class="icon" aria-hidden="true"><use href="#i-expand" /></svg></button>
+        </div>
+        <div class="script-panel-heading">
+          <div>
+            <p class="eyebrow">Review before running</p>
+            <h2 id="script-heading">Generated scripts</h2>
+            <p>These scripts do not run in your browser. Review every operation before running them.</p>
+          </div>
+          <button type="button" id="script-expand" class="icon-button" aria-label="Expand script panel">
+            <svg class="icon" aria-hidden="true"><use href="#i-expand" /></svg>
+          </button>
+        </div>
+        <div id="risk-summary" class="risk-summary" aria-live="polite"></div>
+        <p id="conflict-notice" class="notice notice-caution" aria-live="polite" hidden></p>
+        <p id="critical-banner" class="notice notice-critical" hidden>Critical changes are included. Review their consequences below.</p>
+        <div class="script-tabs" role="tablist" aria-label="Script type">
+          <button id="install-tab" type="button" role="tab" aria-selected="true" aria-controls="script-preview" data-script-tab="setup">Install script</button>
+          <button id="revert-tab" type="button" role="tab" aria-selected="false" aria-controls="script-preview" data-script-tab="revert">Revert script</button>
+        </div>
+        <p id="revert-warning" class="notice notice-caution" hidden>Some operations cannot be reversed, including firmware updates, updates to existing software, and cleanup deletions.</p>
+        <div class="script-controls">
+          <label class="check-label"><input id="wrap-toggle" type="checkbox" checked /> Wrap long lines</label>
+          <div class="text-size-control" aria-label="Script text size">
+            <span>Text size</span><button type="button" id="text-smaller" aria-label="Decrease script text size">A−</button>
+            <button type="button" id="text-reset" aria-label="Reset script text size">A</button>
+            <button type="button" id="text-larger" aria-label="Increase script text size">A+</button>
+          </div>
+          <button type="button" id="fullscreen-script" class="button">Fullscreen</button>
+        </div>
+        <pre class="script-preview" id="script-preview" tabindex="0"><code id="script-code"></code></pre>
+        <p id="copy-status" class="sr-status" aria-live="polite"></p>
+        <div class="script-actions">
+          <button type="button" class="button button-primary" id="copy-script">
+            <svg class="icon" aria-hidden="true"><use href="#i-copy" /></svg> Copy script
+          </button>
+          <button type="button" class="button" id="download-script">
+            <svg class="icon" aria-hidden="true"><use href="#i-download" /></svg> Download .sh
+          </button>
+        </div>
+        <p id="bootstrap-note" class="small-note"></p>
+      </aside>
+    </main>
     <footer class="site-footer">
-      <div class="container footer-content">
-        <ul><li><span>Ray Code</span></li><li>Powered by <a href="https://pages.github.com/">GitHub Pages</a></li></ul>
+      <div class="footer-inner">
+        <p><strong>Fed-up</strong> is an independent, unofficial project. It is not affiliated with or endorsed by the Fedora Project or Red Hat. Provided as is.</p>
+        <p><a href="https://github.com/raycode22/fed-up" target="_blank" rel="noopener noreferrer">Open-source project (MIT License)</a></p>
+        <p class="small-note">Interface icons: Lucide, ISC License.</p>
       </div>
     </footer>
-    <script type="module" src="app.js"></script>
+    <dialog id="how-to-dialog" aria-labelledby="how-to-title">
+      <form method="dialog" class="dialog-close-row"><button class="icon-button" aria-label="Close dialog"><svg class="icon" aria-hidden="true"><use href="#i-close" /></svg></button></form>
+      <h2 id="how-to-title">How to use Fed-up</h2>
+      <ol><li>Select the Fedora release and desktop environment.</li><li>Choose options and provide any requested values.</li><li>Review the complete install or revert script and its warnings.</li><li>Copy or download the script. It runs only if you choose to run it yourself.</li></ol>
+    </dialog>
+    <dialog id="about-dialog" aria-labelledby="about-title">
+      <form method="dialog" class="dialog-close-row"><button class="icon-button" aria-label="Close dialog"><svg class="icon" aria-hidden="true"><use href="#i-close" /></svg></button></form>
+      <h2 id="about-title">About and privacy</h2>
+      <ul>
+        <li>This static site has no analytics or tracking, and does not send your selections or preferences anywhere. It uses no cookies; theme, text size, and selections are stored locally in your browser where storage is available.</li>
+        <li>The website never runs commands. It generates scripts for you to inspect, copy, download, and run yourself.</li>
+        <li>The generated script may install <code>python3</code>, Fedora's optional <code>gum</code> text UI, and <code>flatpak</code> when selected items require it, plus your chosen software. Python packages are not installed with pip. gum is optional and is never installed from a third-party repository by this generator.</li>
+        <li>Software sources and any non-reversible operations are identified in the generated script. Review it before running; system changes require administrator privileges.</li>
+        <li><a href="https://github.com/raycode22/fed-up" target="_blank" rel="noopener noreferrer">Source code</a> is available under the MIT License.</li>
+        <li>This is an independent, unofficial project and is not affiliated with or endorsed by the Fedora Project or Red Hat. Provided as is.</li>
+      </ul>
+    </dialog>
+    <dialog id="critical-dialog" aria-labelledby="critical-title">
+      <h2 id="critical-title">Critical system change</h2>
+      <p id="critical-message"></p>
+      <div class="dialog-actions">
+        <button type="button" class="button" id="cancel-critical">Cancel</button>
+        <button type="button" class="button button-destructive" id="confirm-critical">Add to script</button>
+      </div>
+    </dialog>
+    <dialog id="confirm-select-dialog" aria-labelledby="select-all-title">
+      <h2 id="select-all-title">Select all options?</h2>
+      <p id="select-all-message"></p>
+      <div class="dialog-actions"><button type="button" class="button button-primary" id="select-all-safe">Select all except Critical</button><button type="button" class="button button-destructive" id="select-all-everything">Include Critical too</button><button type="button" class="button" id="cancel-select-all">Cancel</button></div>
+    </dialog>
+    <dialog id="reset-dialog" aria-labelledby="reset-title">
+      <h2 id="reset-title">Reset all selections and preferences?</h2>
+      <p>This clears your selected options and saved theme and text-size preferences from this browser.</p>
+      <div class="dialog-actions"><button type="button" class="button" id="cancel-reset">Cancel</button><button type="button" class="button button-destructive" id="confirm-reset">Reset</button></div>
+    </dialog>
   </body>
 </html>
