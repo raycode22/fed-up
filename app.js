@@ -480,16 +480,89 @@ function actionFor(item) {
   return itemAction(item);
 }
 
-function buildSelectedOperations() {
-  return CATALOG_ITEMS.filter((item) => state.selected.has(item.id)).map((item) => ({
+function installerDocs(item) {
+  const docs = [];
+  if (['dnf', 'service', 'cleanup'].includes(item.installMethod) || item.id === 'configure-dnf') {
+    docs.push({
+      label: 'Fedora DNF guide',
+      url: 'https://docs.fedoraproject.org/en-US/quick-docs/dnf/',
+    });
+  }
+  if (item.installMethod === 'service') {
+    docs.push({
+      label: 'systemctl documentation',
+      url: 'https://www.freedesktop.org/software/systemd/man/latest/systemctl.html',
+    });
+  }
+  if (item.installMethod === 'flatpak') {
+    docs.push({ label: 'Flatpak usage documentation', url: 'https://docs.flatpak.org/en/latest/using-flatpak.html' });
+    docs.push({ label: 'Flathub setup', url: 'https://flathub.org/setup' });
+  }
+  if (item.id === 'dnf-autoupdate') {
+    docs.push({
+      label: 'Fedora automatic updates guide',
+      url: 'https://docs.fedoraproject.org/en-US/quick-docs/autoupdates/',
+    });
+  }
+  if (item.id === 'rpmfusion-repos') {
+    docs.push({ label: 'RPM Fusion configuration', url: 'https://rpmfusion.org/Configuration' });
+  }
+  if (item.id === 'firmware-update') {
+    docs.push({ label: 'fwupd project', url: 'https://fwupd.org/' });
+  }
+  if (item.id === 'set-hostname') {
+    docs.push({
+      label: 'hostnamectl documentation',
+      url: 'https://www.freedesktop.org/software/systemd/man/latest/hostnamectl.html',
+    });
+  }
+  if (item.id === 'wake-on-lan') {
+    docs.push({
+      label: 'NetworkManager nmcli documentation',
+      url: 'https://networkmanager.pages.freedesktop.org/NetworkManager/NetworkManager/nmcli.html',
+    });
+  }
+  if (item.id === 'dnf-autoupdate') {
+    docs.push({
+      label: 'systemd timer documentation',
+      url: 'https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html',
+    });
+  }
+  return docs;
+}
+
+function buildOperation(item) {
+  const action = actionFor(item);
+  return {
     id: item.id,
     label: item.label,
+    section: SECTIONS.find((section) => section.id === item.section)?.title || item.section,
     risk: item.risk,
+    riskReason: userFacingRisk(item),
     reversible: item.revertible,
     revertReason: item.revertReason,
-    action: actionFor(item),
+    description: item.description,
+    source: item.installSource,
+    docs: installerDocs(item),
+    action,
+    eligible: Boolean(action) && !item.needsVerification,
+    unavailableReason: item.needsVerification
+      ? 'Installation source or instructions still need verification.'
+      : action ? '' : 'No verified install action is available.',
+    inputType: item.requiresInput?.type || null,
+    inputOptions: item.requiresInput?.type === 'power-profile'
+      ? ['balanced', 'power-saver', 'performance']
+      : [],
     input: state.inputs[item.id] || '',
-  }));
+    dependsOn: [...(item.depends_on || [])],
+    conflictsWith: [...(item.conflicts_with || [])],
+    desktopApplicability: [...(item.desktopApplicability || [])],
+    supportedVersions: [...(item.supportedVersions || [])],
+  };
+}
+
+function buildSelectedOperations() {
+  return CATALOG_ITEMS.filter((item) => state.selected.has(item.id)).map(buildOperation);
 }
 
 function pythonPayload() {
@@ -505,7 +578,11 @@ import sys
 
 parser = argparse.ArgumentParser(description="Fed-up Fedora setup script")
 parser.add_argument("--metadata", required=True)
-parser.add_argument("--yes", action="store_true", help="Skip interactive confirmations")
+parser.add_argument("--yes", action="store_true", help="Automatically approve confirmations")
+output_group = parser.add_mutually_exclusive_group()
+output_group.add_argument("--quiet", action="store_true", help="Suppress routine progress output")
+output_group.add_argument("--verbose", action="store_true", help="Show command output")
+parser.add_argument("--quit", action="store_true", help="Exit without running setup")
 args = parser.parse_args()
 
 try:
@@ -516,41 +593,53 @@ except (ValueError, UnicodeDecodeError, json.JSONDecodeError) as error:
 version = data["version"]
 mode = data["mode"]
 operations = data["operations"]
+catalog = data.get("catalog", [])
 default_state_dir = "/var/lib/fed-up" if os.geteuid() == 0 else os.path.join(os.path.expanduser("~"), ".local", "state", "fed-up")
 state_file = os.path.join(os.environ.get("FED_UP_STATE_DIR", default_state_dir), "state.json")
-verbose = data["outputMode"] == "verbose"
+verbose = args.verbose or (data["outputMode"] == "verbose" and not args.quiet)
+quiet = args.quiet or (data["outputMode"] == "quiet" and not args.verbose)
+auto_approve = args.yes
+
+class ActionFailure(Exception):
+    pass
 
 def fail(message):
     raise SystemExit(message)
 
 def run(argv, *, check=True, capture=False):
     try:
-        options = {"check": check, "text": True}
+        options = {"check": False, "text": True}
         if capture or not verbose:
             options["capture_output"] = True
         result = subprocess.run(argv, **options)
-        if not capture and verbose and result.stdout:
-            print(result.stdout, end="")
+        if not capture and verbose:
+            if result.stdout:
+                print(result.stdout, end="")
+            if result.stderr:
+                print(result.stderr, end="", file=sys.stderr)
+        if check and result.returncode != 0:
+            details = result.stderr.strip() if result.stderr else ""
+            raise ActionFailure(f"Command failed ({result.returncode}): {argv[0]}{': ' + details if details else ''}")
         return result
-    except FileNotFoundError:
-        fail(f"Required command not found: {argv[0]}")
-    except subprocess.CalledProcessError as error:
-        details = error.stderr.strip() if error.stderr else ""
-        fail(f"Command failed ({error.returncode}): {argv[0]}{': ' + details if details else ''}")
+    except FileNotFoundError as error:
+        raise ActionFailure(f"Required command not found: {argv[0]}") from error
 
 def require_root():
     if os.geteuid() != 0:
         fail("Selected operation requires administrator privileges. Review this script, then run it with sudo.")
 
 def confirm(message):
-    if args.yes:
+    if auto_approve:
         return True
     if shutil.which("gum") and sys.stdin.isatty():
         result = subprocess.run(["gum", "confirm", message])
         return result.returncode == 0
     if not sys.stdin.isatty():
         fail("A confirmation is required; run interactively or pass --yes after reviewing the script.")
-    return input(message + " [y/N] ").strip().lower() in ("y", "yes")
+    try:
+        return input(message + " [y/N] ").strip().lower() in ("y", "yes")
+    except EOFError:
+        return False
 
 def fedora_release():
     try:
@@ -566,28 +655,25 @@ def fedora_release():
     except OSError as error:
         fail(f"Cannot read /etc/os-release: {error}")
 
-actual = fedora_release()
-if actual != version:
-    if not confirm(f"Selected Fedora {version}, but this system is Fedora {actual}. Continue anyway?"):
-        fail("Fedora version mismatch; no changes were made.")
-
-def validate_data():
+def validate_data(candidates=None):
     if mode == "revert":
-        return
-    for operation in operations:
+        return []
+    errors = []
+    for operation in (operations if candidates is None else candidates):
         action = operation["action"]
-        if not action:
-            fail(f"{operation['label']} has no verified install action; refusing to guess.")
-        if operation["id"] == "set-hostname":
+        if not action or not operation.get("eligible", True):
+            errors.append(f"{operation['label']} has no verified install action; refusing to guess.")
+        if operation.get("inputType") == "hostname" or operation["id"] == "set-hostname":
             value = operation["input"]
             if not re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?", value):
-                fail("Invalid hostname. Use 1-63 letters, digits, or internal hyphens.")
-        if operation["id"] == "wake-on-lan":
+                errors.append(f"{operation['label']}: enter 1-63 letters, digits, or internal hyphens.")
+        if operation.get("inputType") == "interface" or operation["id"] == "wake-on-lan":
             value = operation["input"]
             if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,14}", value):
-                fail("Invalid network interface name.")
-        if operation["id"] == "power-settings" and operation["input"] not in ("balanced", "power-saver", "performance"):
-            fail("Invalid power profile.")
+                errors.append(f"{operation['label']}: enter a valid network interface name.")
+        if (operation.get("inputType") == "power-profile" or operation["id"] == "power-settings") and operation["input"] not in ("balanced", "power-saver", "performance"):
+            errors.append(f"{operation['label']}: choose balanced, power-saver, or performance.")
+    return errors
 
 def load_state():
     try:
@@ -619,6 +705,28 @@ def installed_flatpak(app_id):
     result = subprocess.run(["flatpak", "list", scope, "--app", "--columns=application"], capture_output=True, text=True)
     return result.returncode == 0 and app_id in result.stdout.splitlines()
 
+def remember_package(prior, manager, name, scope=None):
+    entry = {"manager": manager, "name": name}
+    if scope:
+        entry["scope"] = scope
+    packages = prior.setdefault("packages", [])
+    if not any(
+        existing.get("manager") == manager
+        and existing.get("name") == name
+        and existing.get("scope", scope) == scope
+        for existing in packages
+    ):
+        packages.append(entry)
+
+def remember_new_packages(prior, manager, packages):
+    for package, was_installed in packages:
+        if was_installed:
+            continue
+        installed = installed_rpm(package) if manager == "dnf" else installed_flatpak(package)
+        if installed:
+            scope = "--system" if os.geteuid() == 0 else "--user"
+            remember_package(prior, manager, package, scope if manager == "flatpak" else None)
+
 def execute_action(operation, prior):
     action = operation["action"]
     kind = action["type"]
@@ -629,15 +737,16 @@ def execute_action(operation, prior):
         for package in packages:
             was_installed = installed_rpm(package) if manager == "dnf" else installed_flatpak(package)
             existed.append((package, was_installed))
-        if manager == "dnf":
-            run(["dnf", "install", "-y", *packages])
-        else:
-            scope = "--system" if os.geteuid() == 0 else "--user"
-            run(["flatpak", "install", scope, "-y", "flathub", *packages])
-        prior.setdefault("packages", []).extend(
-            {"manager": manager, "name": package, "scope": "--system" if os.geteuid() == 0 else "--user"}
-            for package, was_installed in existed if not was_installed
-        )
+        try:
+            if manager == "dnf":
+                run(["dnf", "install", "-y", *packages])
+            else:
+                scope = "--system" if os.geteuid() == 0 else "--user"
+                run(["flatpak", "install", scope, "-y", "flathub", *packages])
+        except (ActionFailure, SystemExit):
+            remember_new_packages(prior, manager, existed)
+            raise
+        remember_new_packages(prior, manager, existed)
     elif kind == "group":
         run(["dnf", "group", "install", "-y", action["group"]])
     elif kind == "hostname":
@@ -652,10 +761,19 @@ def execute_action(operation, prior):
         timer = "dnf-automatic.timer"
         before = installed_rpm(package)
         was_enabled = subprocess.run(["systemctl", "is-enabled", timer], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
-        run(["dnf", "install", "-y", package])
-        run(["systemctl", "enable", "--now", timer])
+        try:
+            run(["dnf", "install", "-y", package])
+        except (ActionFailure, SystemExit):
+            remember_new_packages(prior, "dnf", [(package, before)])
+            raise
         if not before:
-            prior.setdefault("packages", []).append({"manager": "dnf", "name": package})
+            remember_package(prior, "dnf", package)
+        try:
+            run(["systemctl", "enable", "--now", timer])
+        except (ActionFailure, SystemExit):
+            if not was_enabled and subprocess.run(["systemctl", "is-enabled", timer], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
+                prior.setdefault("services", []).append(timer)
+            raise
         if not was_enabled:
             prior.setdefault("services", []).append(timer)
     elif kind == "flathub":
@@ -669,15 +787,24 @@ def execute_action(operation, prior):
     elif kind == "ssh":
         before = installed_rpm("openssh-server")
         was_enabled = subprocess.run(["systemctl", "is-enabled", "sshd.service"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
-        run(["dnf", "install", "-y", "openssh-server"])
-        run(["systemctl", "enable", "--now", "sshd.service"])
+        try:
+            run(["dnf", "install", "-y", "openssh-server"])
+        except (ActionFailure, SystemExit):
+            remember_new_packages(prior, "dnf", [("openssh-server", before)])
+            raise
         if not before:
-            prior.setdefault("packages", []).append({"manager": "dnf", "name": "openssh-server"})
+            remember_package(prior, "dnf", "openssh-server")
+        try:
+            run(["systemctl", "enable", "--now", "sshd.service"])
+        except (ActionFailure, SystemExit):
+            if not was_enabled and subprocess.run(["systemctl", "is-enabled", "sshd.service"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
+                prior.setdefault("services", []).append("sshd.service")
+            raise
         if not was_enabled:
             prior.setdefault("services", []).append("sshd.service")
     elif kind == "firmware":
         if not confirm("Firmware updates may be irreversible and can affect boot. Continue?"):
-            fail("Firmware update cancelled.")
+            raise ActionFailure("Firmware update confirmation declined.")
         run(["fwupdmgr", "refresh"])
         run(["fwupdmgr", "update", "--assume-yes"])
     elif kind == "rpmfusion":
@@ -687,13 +814,20 @@ def execute_action(operation, prior):
         print("Free repository key fingerprint: E9A4 91A3 DE24 7814 E7E0 67EA E06F 8ECD D651 FF2E")
         print("Nonfree repository key fingerprint: 79BD B88F 9BBF 7391 0FD4 095B 6A2A F961 9484 3C65")
         if not confirm("Trust the RPM Fusion repositories and their signing keys?"):
-            fail("RPM Fusion repository setup cancelled.")
+            raise ActionFailure("RPM Fusion repository confirmation declined.")
         had_free = installed_rpm("rpmfusion-free-release")
         had_nonfree = installed_rpm("rpmfusion-nonfree-release")
-        run(["dnf", "install", "-y", base.format(repo="free"), base.format(repo="nonfree")])
+        try:
+            run(["dnf", "install", "-y", base.format(repo="free"), base.format(repo="nonfree")])
+        except (ActionFailure, SystemExit):
+            remember_new_packages(prior, "dnf", [
+                ("rpmfusion-free-release", had_free),
+                ("rpmfusion-nonfree-release", had_nonfree),
+            ])
+            raise
         for package, was_installed in (("rpmfusion-free-release", had_free), ("rpmfusion-nonfree-release", had_nonfree)):
             if not was_installed:
-                prior.setdefault("packages", []).append({"manager": "dnf", "name": package})
+                remember_package(prior, "dnf", package)
     elif kind == "power-profile":
         if not shutil.which("powerprofilesctl"):
             fail("powerprofilesctl is unavailable; install power-profiles-daemon first.")
@@ -718,8 +852,518 @@ def execute_action(operation, prior):
         print("Cleanup removes DNF's cached package metadata and downloaded package files only.")
         if confirm("Clean the DNF package cache?"):
             run(["dnf", "clean", "all"])
+        else:
+            raise ActionFailure("DNF cleanup confirmation declined.")
     else:
         fail(f"Unsupported operation type: {kind}")
+
+def choose_menu(title, choices):
+    if not choices:
+        return None
+    if shutil.which("gum") and sys.stdin.isatty():
+        try:
+            result = subprocess.run(
+                ["gum", "choose", "--header", title, *choices],
+                text=True,
+                stdout=subprocess.PIPE,
+            )
+        except FileNotFoundError:
+            result = None
+        if result is not None:
+            return result.stdout.strip() if result.returncode == 0 else None
+    if not sys.stdin.isatty():
+        return None
+    print(f"\n{title}")
+    for index, choice in enumerate(choices, start=1):
+        print(f"  {index}. {choice}")
+    while True:
+        try:
+            answer = input("Choose a number (0 to go back): ").strip()
+        except EOFError:
+            return None
+        if answer == "0":
+            return None
+        if answer.isdigit() and 1 <= int(answer) <= len(choices):
+            return choices[int(answer) - 1]
+        print(f"Enter a number from 1 to {len(choices)}, or 0 to go back.")
+
+def ask_value(prompt, current=""):
+    if shutil.which("gum") and sys.stdin.isatty():
+        try:
+            result = subprocess.run(
+                ["gum", "input", "--prompt", f"{prompt}: ", "--value", current],
+                text=True,
+                stdout=subprocess.PIPE,
+            )
+        except FileNotFoundError:
+            result = None
+        if result is not None:
+            return result.stdout.rstrip("\n") if result.returncode == 0 else None
+    if not sys.stdin.isatty():
+        return None
+    try:
+        return input(f"{prompt}{f' [{current}]' if current else ''}: ").strip() or current
+    except EOFError:
+        return None
+
+def selectable(operation):
+    return (
+        operation.get("eligible", bool(operation.get("action")))
+        and operation.get("action")
+        and data["desktop"] in operation.get("desktopApplicability", ["gnome", "kde"])
+        and version in operation.get("supportedVersions", [version])
+    )
+
+def input_is_valid(operation, value):
+    input_type = operation.get("inputType")
+    if input_type == "hostname" or operation["id"] == "set-hostname":
+        return bool(re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?", value))
+    if input_type == "interface" or operation["id"] == "wake-on-lan":
+        return bool(re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,14}", value))
+    if input_type == "power-profile" or operation["id"] == "power-settings":
+        return value in ("balanced", "power-saver", "performance")
+    return True
+
+def edit_operation_input(operation):
+    input_type = operation.get("inputType")
+    if not input_type:
+        return operation.get("input", "")
+    if input_type == "power-profile":
+        value = choose_menu(
+            f"{operation['label']} — choose a power profile",
+            operation.get("inputOptions") or ["balanced", "power-saver", "performance"],
+        )
+        return value
+    prompt = {
+        "hostname": "Hostname (1-63 letters, digits, or internal hyphens)",
+        "interface": "Network interface name (up to 15 characters)",
+    }.get(input_type, operation["label"])
+    for attempt in range(1, 4):
+        value = ask_value(prompt, operation.get("input", ""))
+        if value is None:
+            return None
+        if input_is_valid(operation, value):
+            operation["input"] = value
+            return value
+        print(f"Invalid value. Check the format and try again ({attempt}/3).")
+    return None
+
+def show_operation(operation):
+    print(f"\n{operation['label']} — {operation['risk'].upper()} ({operation['section']})")
+    print(operation.get("description") or "No additional description is available.")
+    if operation.get("riskReason"):
+        print(f"Risk: {operation['riskReason']}")
+    print(f"Source: {operation.get('source') or 'Not specified'}")
+    print(f"Reversibility: {operation.get('revertReason') or ('Reversible' if operation.get('reversible') else 'Not reliably reversible')}")
+    lookup = {entry["id"]: entry for entry in catalog}
+    requirements = [lookup[item_id]["label"] for item_id in operation.get("dependsOn", []) if item_id in lookup]
+    if requirements:
+        print("Required actions: " + ", ".join(requirements))
+    conflicts = [lookup[item_id]["label"] for item_id in operation.get("conflictsWith", []) if item_id in lookup]
+    if conflicts:
+        print("Conflicts with: " + ", ".join(conflicts))
+    if operation.get("inputType"):
+        print(f"Current value: {operation.get('input') or '(not set)'}")
+    docs = operation.get("docs", [])
+    if docs:
+        print("Documentation:")
+        for document in docs:
+            print(f"  {document['label']}: {document['url']}")
+    else:
+        print("Documentation: No curated official link is available for this item.")
+
+def find_conflicts(selected):
+    pairs = []
+    seen = set()
+    for operation in selected.values():
+        for other_id in operation.get("conflictsWith", []):
+            if other_id in selected:
+                pair = tuple(sorted((operation["id"], other_id)))
+                if pair not in seen:
+                    seen.add(pair)
+                    pairs.append(pair)
+    for group in (
+        ("firefox", "google-chrome", "chromium", "brave", "vivaldi", "microsoft-edge", "librewolf", "opera", "zen-browser"),
+        ("libreoffice", "onlyoffice", "wps-office"),
+        ("docker", "podman"),
+    ):
+        present = [item_id for item_id in group if item_id in selected]
+        for index, left in enumerate(present):
+            for right in present[index + 1:]:
+                pair = tuple(sorted((left, right)))
+                if pair not in seen:
+                    seen.add(pair)
+                    pairs.append(pair)
+    return pairs
+
+def remove_with_dependents(selected, ids):
+    removing = set(ids)
+    changed = True
+    while changed:
+        changed = False
+        for operation in selected.values():
+            if operation["id"] not in removing and any(item_id in removing for item_id in operation.get("dependsOn", [])):
+                removing.add(operation["id"])
+                changed = True
+    for item_id in removing:
+        selected.pop(item_id, None)
+    return removing
+
+def add_with_dependencies(selected, operation, visiting=None):
+    if not selectable(operation):
+        print(f"Unavailable: {operation['label']}: {operation.get('unavailableReason') or 'not supported for this setup'}.")
+        return False
+    visiting = set() if visiting is None else visiting
+    if operation["id"] in visiting:
+        fail(f"Catalog dependency cycle detected at {operation['label']}.")
+    visiting.add(operation["id"])
+    lookup = {entry["id"]: entry for entry in catalog}
+    for dependency_id in operation.get("dependsOn", []):
+        if dependency_id in selected:
+            continue
+        dependency = lookup.get(dependency_id)
+        if dependency is None or not selectable(dependency):
+            print(f"Cannot add {operation['label']}: required action {dependency_id} is unavailable.")
+            visiting.remove(operation["id"])
+            return False
+        print(f"Adding required action: {dependency['label']}.")
+        if dependency["risk"] == "critical" and not confirm(
+            f"Required action is Critical: {dependency['label']}. Continue?"
+        ):
+            print(f"Keeping {operation['label']} unselected because its required action was declined.")
+            visiting.remove(operation["id"])
+            return False
+        if not add_with_dependencies(selected, dict(dependency), visiting):
+            visiting.remove(operation["id"])
+            return False
+    selected[operation["id"]] = dict(operation)
+    visiting.remove(operation["id"])
+    return True
+
+def add_missing_dependencies(selected):
+    lookup = {entry["id"]: entry for entry in catalog}
+    added_any = False
+    while True:
+        missing = [
+            dependency_id
+            for operation in list(selected.values())
+            for dependency_id in operation.get("dependsOn", [])
+            if dependency_id not in selected
+        ]
+        if not missing:
+            return added_any
+        dependency_id = missing[0]
+        dependency = lookup.get(dependency_id)
+        if dependency is None or not selectable(dependency):
+            fail(f"A selected action requires unavailable catalog action {dependency_id}.")
+        print(f"Required by the current selection: {dependency['label']}.")
+        if dependency["risk"] == "critical" and not confirm(
+            f"Required action is Critical: {dependency['label']}. Continue?"
+        ):
+            fail(f"Cannot continue without required action {dependency['label']}.")
+        if not add_with_dependencies(selected, dict(dependency)):
+            fail(f"Could not add required action {dependency['label']}.")
+        added_any = True
+
+def choose_unavailable():
+    unavailable = [
+        operation for operation in catalog
+        if not selectable(operation)
+    ]
+    print(f"\nUnavailable or unverified catalog actions: {len(unavailable)}")
+    for operation in unavailable:
+        reason = operation.get("unavailableReason") or "Not supported for the selected Fedora version or desktop."
+        print(f"  - {operation['label']}: {reason}")
+    if unavailable and sys.stdin.isatty():
+        choose_menu("Unavailable actions are informational and cannot be selected.", ["Back"])
+
+def review_catalog(selected, outcomes, attempt_counts):
+    lookup = {entry["id"]: entry for entry in catalog}
+    available = [entry for entry in catalog if selectable(entry)]
+    while True:
+        choices = []
+        choice_ids = {}
+        for operation in available:
+            status = "ON" if operation["id"] in selected else "off"
+            outcome = outcomes.get(operation["id"], {}).get("status")
+            if outcome == "installed":
+                status = "DONE"
+            elif outcome in ("failed", "skipped"):
+                remaining = max(0, 3 - attempt_counts.get(operation["id"], 0))
+                status = outcome.upper() + (f" — {remaining} retries left" if remaining else " — attempt limit reached")
+            label = f"[{status}] [{operation['risk'].upper()}] {operation['label']} — {operation['section']}"
+            choices.append(label)
+            choice_ids[label] = operation["id"]
+        unavailable_label = f"View unavailable / unverified actions ({len(catalog) - len(available)})"
+        choices.extend([unavailable_label, "Done reviewing"])
+        choice = choose_menu("Review or change setup actions", choices)
+        if choice is None or choice == "Done reviewing":
+            return
+        if choice == unavailable_label:
+            choose_unavailable()
+            continue
+        operation_id = choice_ids.get(choice)
+        operation = lookup.get(operation_id)
+        if operation is None:
+            continue
+        show_operation(operation)
+        actions = ["Toggle selection"]
+        if operation.get("inputType"):
+            actions.insert(0, "Edit value")
+        actions.append("Back to action list")
+        action = choose_menu(f"Action: {operation['label']}", actions)
+        if action == "Edit value":
+            value = edit_operation_input(operation)
+            if value is not None:
+                operation["input"] = value
+                if operation_id in selected:
+                    selected[operation_id]["input"] = value
+        elif action == "Toggle selection":
+            if operation_id in selected:
+                removed = remove_with_dependents(selected, {operation_id})
+                for removed_id in removed:
+                    if outcomes.get(removed_id, {}).get("status") in ("failed", "skipped"):
+                        outcomes.pop(removed_id, None)
+                print("Removed: " + ", ".join(lookup[item_id]["label"] for item_id in removed if item_id in lookup))
+            else:
+                candidate = dict(operation)
+                if candidate.get("inputType") and not input_is_valid(candidate, candidate.get("input", "")):
+                    value = edit_operation_input(candidate)
+                    if value is None:
+                        print(f"{candidate['label']} remains unselected; a valid value is required.")
+                        continue
+                    candidate["input"] = value
+                trial = dict(selected)
+                before = set(trial)
+                if not add_with_dependencies(trial, candidate):
+                    continue
+                changed_ids = (set(trial) - before) | {operation_id}
+                conflicts = [pair for pair in find_conflicts(trial) if changed_ids.intersection(pair)]
+                replace_allowed = True
+                for left_id, right_id in conflicts:
+                    displaced_id = right_id if left_id in changed_ids else left_id
+                    displaced = lookup[displaced_id]
+                    if not confirm(
+                        f"{candidate['label']} conflicts with {displaced['label']}. Remove the conflicting action and its dependents?"
+                    ):
+                        replace_allowed = False
+                        break
+                    remove_with_dependents(trial, {displaced_id})
+                if replace_allowed:
+                    selected.clear()
+                    selected.update(trial)
+                    if outcomes.get(operation_id, {}).get("status") in ("failed", "skipped"):
+                        outcomes.pop(operation_id, None)
+                else:
+                    print(f"{candidate['label']} was not added; the existing selection was kept.")
+
+def ensure_flatpak(selected):
+    needs_flatpak = any(
+        operation["action"].get("manager") == "flatpak"
+        or operation["action"]["type"] in ("flatpak-update", "flathub")
+        for operation in selected.values()
+    )
+    if needs_flatpak and not shutil.which("flatpak"):
+        require_root()
+        print("Flatpak is required by the current selection; installing it from Fedora repositories.")
+        run(["dnf", "--repo=fedora,updates", "install", "-y", "flatpak"])
+
+def results_summary(outcomes):
+    installed = [result for result in outcomes.values() if result["status"] == "installed"]
+    skipped = [result for result in outcomes.values() if result["status"] == "skipped"]
+    failed = [result for result in outcomes.values() if result["status"] == "failed"]
+    unavailable = [operation for operation in catalog if not selectable(operation)]
+    print("\nFed-up results")
+    print(f"  Installed/completed: {len(installed)}")
+    for result in installed:
+        print(f"    - {result['label']}")
+    print(f"  Skipped: {len(skipped)}")
+    for result in skipped:
+        print(f"    - {result['label']}: {result.get('reason', 'Skipped by user.')}")
+    print(f"  Failed: {len(failed)}")
+    for result in failed:
+        print(f"    - {result['label']}: {result.get('reason', 'Unknown error.')}")
+    print(f"  Unavailable or unverified catalog actions: {len(unavailable)}")
+    for operation in unavailable[:5]:
+        print(f"    - {operation['label']}: {operation.get('unavailableReason') or 'Not supported for this Fedora version or desktop.'}")
+    if len(unavailable) > 5:
+        print(f"    - ... and {len(unavailable) - 5} more; choose the unavailable-actions view from Review.")
+
+def run_selected(selected, outcomes, attempt_counts):
+    added_dependencies = add_missing_dependencies(selected)
+    if added_dependencies:
+        print("Required actions were added. Review the updated selection before starting.")
+        return False
+    conflicts = find_conflicts(selected)
+    if conflicts:
+        lookup = {entry["id"]: entry for entry in catalog}
+        print("Resolve conflicting selections before running:")
+        for left_id, right_id in conflicts:
+            print(f"  - {lookup[left_id]['label']} conflicts with {lookup[right_id]['label']}.")
+        return False
+    missing_dependencies = [
+        f"{operation['label']} requires {dependency_id}"
+        for operation in selected.values()
+        for dependency_id in operation.get("dependsOn", [])
+        if dependency_id not in selected
+    ]
+    if missing_dependencies:
+        print("Resolve missing required actions before running:")
+        for message in missing_dependencies:
+            print(f"  - {message}")
+        return False
+    errors = validate_data(selected.values())
+    if errors:
+        print("Fix these setup values before running:")
+        for message in errors:
+            print(f"  - {message}")
+        return False
+    pending = [
+        operation for operation in selected.values()
+        if outcomes.get(operation["id"], {}).get("status") not in ("installed", "skipped")
+        and attempt_counts.get(operation["id"], 0) < 3
+    ]
+    if not pending:
+        print("There are no unattempted selected actions.")
+        return True
+    needs_root = any(
+        operation["action"]["type"] not in ("packages", "flatpak-update", "flathub")
+        or operation["action"].get("manager") == "dnf"
+        for operation in pending
+    )
+    if needs_root:
+        require_root()
+    ensure_flatpak({operation["id"]: operation for operation in pending})
+    previous = load_state()
+    stop_requested = False
+    for operation in pending:
+        incomplete_dependencies = [
+            item_id for item_id in operation.get("dependsOn", [])
+            if outcomes.get(item_id, {}).get("status") != "installed"
+        ]
+        if incomplete_dependencies:
+            lookup = {entry["id"]: entry for entry in catalog}
+            names = ", ".join(lookup[item_id]["label"] for item_id in incomplete_dependencies if item_id in lookup)
+            outcomes[operation["id"]] = {
+                "status": "skipped",
+                "label": operation["label"],
+                "reason": f"Required action did not complete: {names}.",
+            }
+            continue
+        if operation["risk"] == "critical" and operation["id"] != "firmware-update" and not auto_approve:
+            if not confirm(f"Critical change: {operation['label']}. Continue?"):
+                outcomes[operation["id"]] = {
+                    "status": "skipped", "label": operation["label"], "reason": "Critical confirmation declined.",
+                }
+                continue
+        while attempt_counts.get(operation["id"], 0) < 3:
+            attempt = attempt_counts.get(operation["id"], 0) + 1
+            attempt_counts[operation["id"]] = attempt
+            try:
+                if not quiet:
+                    print(f"Applying: {operation['label']} (attempt {attempt}/3)")
+                execute_action(operation, previous)
+                try:
+                    save_state(previous)
+                except OSError as state_error:
+                    reason = f"Action may have completed, but Fed-up could not persist its revert state: {state_error}"
+                    print(f"Error: {reason}", file=sys.stderr)
+                    outcomes[operation["id"]] = {
+                        "status": "failed", "label": operation["label"], "reason": reason,
+                    }
+                    stop_requested = True
+                    break
+                outcomes[operation["id"]] = {"status": "installed", "label": operation["label"]}
+                break
+            except (ActionFailure, SystemExit) as error:
+                reason = str(error) or "The operation failed without an error message."
+                print(f"Warning: {operation['label']} failed: {reason}", file=sys.stderr)
+                try:
+                    save_state(previous)
+                except (OSError, PermissionError) as state_error:
+                    print(f"Could not save partial Fed-up state: {state_error}", file=sys.stderr)
+                if "confirmation declined" in reason.lower():
+                    outcomes[operation["id"]] = {
+                        "status": "skipped", "label": operation["label"], "reason": reason,
+                    }
+                    break
+                choices = []
+                if attempt < 3:
+                    choices.append(f"Retry (attempt {attempt + 1}/3)")
+                choices.extend(["Skip this action", "Quit installer"])
+                decision = choose_menu(f"{operation['label']} failed after attempt {attempt}/3", choices)
+                if decision and decision.startswith("Retry"):
+                    continue
+                if decision == "Quit installer":
+                    outcomes[operation["id"]] = {
+                        "status": "failed", "label": operation["label"], "reason": reason,
+                    }
+                    stop_requested = True
+                    break
+                if decision is None and sys.stdin.isatty():
+                    outcomes[operation["id"]] = {
+                        "status": "failed", "label": operation["label"], "reason": reason,
+                    }
+                    stop_requested = True
+                    break
+                outcomes[operation["id"]] = {
+                    "status": "skipped" if decision == "Skip this action" or not sys.stdin.isatty() else "failed",
+                    "label": operation["label"],
+                    "reason": reason if decision == "Skip this action" or not sys.stdin.isatty() else "Installer stopped.",
+                }
+                break
+        if stop_requested:
+            break
+    return True
+
+def installer_menu():
+    global auto_approve, quiet, verbose
+    selected = {operation["id"]: dict(operation) for operation in operations}
+    outcomes = {}
+    attempt_counts = {}
+    if not catalog or not sys.stdin.isatty():
+        if catalog:
+            errors = validate_data(selected.values())
+            if errors:
+                fail("; ".join(errors))
+        try:
+            valid = run_selected(selected, outcomes, attempt_counts)
+        except (ActionFailure, SystemExit) as error:
+            fail(str(error))
+        if catalog:
+            results_summary(outcomes)
+        return valid and not any(result["status"] == "failed" for result in outcomes.values())
+    while True:
+        choices = [
+            f"Output: {'verbose' if verbose else 'quiet'} (toggle)",
+            f"Auto-approve confirmations: {'on' if auto_approve else 'off'} (toggle)",
+            "Quit",
+            "Review or change selections",
+        ]
+        if selected:
+            choices.append(f"Run selected actions ({len(selected)})")
+        choice = choose_menu("Fed-up installer — review changes before anything runs", choices)
+        if choice is None or choice == "Quit":
+            print("Fed-up setup cancelled; no further actions will run.")
+            return True
+        if choice == "Review or change selections":
+            review_catalog(selected, outcomes, attempt_counts)
+        elif choice.startswith("Run selected actions"):
+            try:
+                valid = run_selected(selected, outcomes, attempt_counts)
+            except (ActionFailure, SystemExit) as error:
+                print(f"Cannot run selected actions: {error}", file=sys.stderr)
+                valid = False
+            if valid:
+                results_summary(outcomes)
+                next_step = choose_menu("Setup pass complete", ["Return to menu", "Exit"])
+                if next_step != "Return to menu":
+                    return not any(result["status"] == "failed" for result in outcomes.values())
+        elif choice.startswith("Output:"):
+            verbose = not verbose
+            quiet = not verbose
+        elif choice.startswith("Auto-approve confirmations:"):
+            auto_approve = not auto_approve
 
 def do_revert():
     prior = load_state()
@@ -758,24 +1402,26 @@ def do_revert():
         pass
     print("Revert steps finished. Firmware updates, cleanup, package updates, DNF settings, and some network changes cannot be reversed reliably.")
 
-validate_data()
+if args.quit:
+    print("Fed-up setup cancelled.")
+    raise SystemExit(0)
+
+actual = fedora_release()
+if actual != version:
+    if not confirm(f"Selected Fedora {version}, but this system is Fedora {actual}. Continue anyway?"):
+        fail("Fedora version mismatch; no changes were made.")
+
 if mode == "revert":
-    do_revert()
+    try:
+        do_revert()
+    except ActionFailure as error:
+        fail(str(error))
 elif mode == "setup":
-    needs_root = any(operation["action"]["type"] not in ("packages", "flatpak-update", "flathub") or operation["action"].get("manager") == "dnf" for operation in operations)
-    if needs_root:
-        require_root()
-    previous = load_state()
-    for operation in operations:
-        if operation["risk"] == "critical" and operation["id"] != "firmware-update" and not args.yes:
-            if not confirm(f"Critical change: {operation['label']}. Continue?"):
-                fail(f"Cancelled before {operation['label']}.")
-        print(f"Applying: {operation['label']}")
-        execute_action(operation, previous)
-        save_state(previous)
-    print("Selected operations completed.")
+    if not installer_menu():
+        fail("One or more selected actions failed or could not be completed.")
 else:
     fail(f"Unknown script mode: {mode}")
+
 `;
 }
 
@@ -795,18 +1441,39 @@ function generatedScript(mode = state.activeScript) {
     outputMode: state.outputMode,
     mode,
     operations,
+    catalog: mode === 'setup' ? CATALOG_ITEMS.map(buildOperation) : [],
   };
-  const encoded = btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(metadata))));
+  const bytes = new TextEncoder().encode(JSON.stringify(metadata));
+  let binary = '';
+  for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+  }
+  const encoded = btoa(binary);
   const names = operations.filter((operation) => operation.risk === 'critical' || operation.risk === 'high').map((operation) => `# - ${operation.label} (${RISK_LABELS[operation.risk]})`).join('\n') || '# - None';
   const irreversible = operations.filter((operation) => !operation.reversible).map((operation) => `# - ${operation.label}: ${operation.revertReason}`).join('\n') || '# - None';
   const payload = pythonPayload();
   const delimiter = 'FED_UP_PYTHON_PAYLOAD_8f12b7a4';
   if (payload.includes(delimiter)) throw new Error('Payload delimiter collision.');
   const bootstrapPackages = new Set(['python3']);
-  if (operations.some((operation) => operation.action?.manager === 'flatpak' || operation.action?.type === 'flatpak-update' || operation.action?.type === 'flathub')) bootstrapPackages.add('flatpak');
   const bootstrap = `# Bootstrap packages: ${[...bootstrapPackages].join(', ')}; optional: gum (Fedora repository only).\n# gum is presentation-only; the script works without it.\n`;
   return `#!/usr/bin/env bash
 set -euo pipefail
+
+for arg in "$@"; do
+  if [[ "$arg" == "--quit" ]]; then
+    echo "Fed-up setup cancelled."
+    exit 0
+  fi
+  if [[ "$arg" == "--help" || "$arg" == "-h" ]]; then
+    printf '%s\n' \
+      "Usage: ./fed-up-install.sh [--quiet | --verbose] [--yes] [--quit]" \
+      "  --quiet    Suppress routine progress; keep warnings and final results" \
+      "  --verbose  Show command output" \
+      "  --yes      Automatically approve confirmations" \
+      "  --quit     Exit without checking prerequisites or changing the system"
+    exit 0
+  fi
+done
 
 # Fed-up standalone Fedora ${state.version} script
 # Desktop: ${state.desktop === 'gnome' ? 'GNOME (Workstation)' : 'KDE Plasma'}
@@ -823,33 +1490,40 @@ if ! grep -q '^ID=fedora$' /etc/os-release 2>/dev/null; then
 fi
 
 install_fedora_packages() {
-  if [[ "$(id -u)" -eq 0 ]]; then dnf install -y "$@"; else sudo dnf install -y "$@"; fi
+  local repositories=()
+  if [[ "\${1:-}" == "--fedora-repositories-only" ]]; then
+    repositories=(--repo=fedora,updates)
+    shift
+  fi
+  if [[ "$(id -u)" -eq 0 ]]; then dnf "\${repositories[@]}" install -y "$@"; else sudo dnf "\${repositories[@]}" install -y "$@"; fi
 }
+
+yes_mode=0
+quiet_mode=0
+for arg in "$@"; do
+  if [[ "$arg" == "--yes" ]]; then yes_mode=1; fi
+  if [[ "$arg" == "--quiet" ]]; then quiet_mode=1; fi
+done
 
 missing=()
 command -v python3 >/dev/null 2>&1 || missing+=(python3)
-${bootstrapPackages.has('flatpak') ? 'command -v flatpak >/dev/null 2>&1 || missing+=(flatpak)' : ''}
 if (("\${#missing[@]}" > 0)); then
   printf 'Missing required package(s): %s\\n' "\${missing[*]}"
-  if [[ "\${1:-}" != "--yes" ]]; then
+  if ((yes_mode == 0)); then
     read -r -p "Install required prerequisites from Fedora repositories? [y/N] " answer
     [[ "$answer" == "y" || "$answer" == "Y" ]] || { echo "Prerequisite installation declined." >&2; exit 1; }
   fi
-  install_fedora_packages "\${missing[@]}" || { echo "Could not install required prerequisites; check network access and Fedora repositories." >&2; exit 1; }
+  install_fedora_packages --fedora-repositories-only "\${missing[@]}" || { echo "Could not install required prerequisites; check network access and Fedora repositories." >&2; exit 1; }
 fi
 
 if ! command -v gum >/dev/null 2>&1; then
-  if dnf info gum >/dev/null 2>&1; then
-    if [[ "\${1:-}" == "--yes" ]]; then
-      install_fedora_packages gum || echo "Optional gum installation failed; continuing with plain-text prompts."
-    elif [[ -t 0 ]]; then
+  if ((yes_mode == 0 && quiet_mode == 0)) && [[ -t 0 ]] && dnf --repo=fedora,updates info gum >/dev/null 2>&1; then
       read -r -p "Install optional gum text UI from Fedora repositories? [y/N] " gum_answer
       if [[ "$gum_answer" == "y" || "$gum_answer" == "Y" ]]; then
-        install_fedora_packages gum || echo "Optional gum installation failed; continuing with plain-text prompts."
+        install_fedora_packages --fedora-repositories-only gum || echo "Optional gum installation failed; continuing with plain-text prompts."
       fi
-    fi
-  else
-    echo "Optional gum package is unavailable in this Fedora repository; plain-text prompts will be used."
+  elif ((quiet_mode == 0)); then
+    echo "Optional gum package is unavailable or not offered; plain-text prompts will be used."
   fi
 fi
 
@@ -891,8 +1565,7 @@ function updateScriptPreview() {
   const conflicts = detectConflicts();
   elements['conflict-notice'].hidden = conflicts.length === 0;
   elements['conflict-notice'].textContent = conflicts.length ? `Potential conflicts: ${conflicts.join(', ')}. Review before running.` : '';
-  const needsFlatpak = selected.some((item) => item.installMethod === 'flatpak' || item.id === 'flatpak-update' || item.id === 'flathub-replace');
-  elements['bootstrap-note'].textContent = `Bootstrap: python3 (required)${needsFlatpak ? ', flatpak (required for selected Flatpak actions)' : ''}; gum is optional and sourced only from Fedora repositories when available.`;
+  elements['bootstrap-note'].textContent = 'Bootstrap: python3 is required; Flatpak is installed from Fedora only if a chosen action needs it; gum is optional and sourced only from Fedora repositories when available.';
 }
 
 function refresh() {
