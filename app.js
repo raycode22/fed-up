@@ -648,14 +648,16 @@ def execute_action(operation, prior):
         run(["dnf", "config-manager", "setopt", "fastestmirror=True"])
         run(["dnf", "config-manager", "setopt", "deltarpm=True"])
     elif kind == "dnf-autoupdate":
-        before = installed_rpm("dnf5-automatic")
-        was_enabled = subprocess.run(["systemctl", "is-enabled", "dnf5-automatic.timer"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
-        run(["dnf", "install", "-y", "dnf5-automatic"])
-        run(["systemctl", "enable", "--now", "dnf5-automatic.timer"])
+        package = "dnf5-plugin-automatic"
+        timer = "dnf-automatic.timer"
+        before = installed_rpm(package)
+        was_enabled = subprocess.run(["systemctl", "is-enabled", timer], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
+        run(["dnf", "install", "-y", package])
+        run(["systemctl", "enable", "--now", timer])
         if not before:
-            prior.setdefault("packages", []).append({"manager": "dnf", "name": "dnf5-automatic"})
+            prior.setdefault("packages", []).append({"manager": "dnf", "name": package})
         if not was_enabled:
-            prior.setdefault("services", []).append("dnf5-automatic.timer")
+            prior.setdefault("services", []).append(timer)
     elif kind == "flathub":
         scope = "--system" if os.geteuid() == 0 else "--user"
         result = subprocess.run(["flatpak", "remote-list", scope, "--columns=name"], capture_output=True, text=True)
