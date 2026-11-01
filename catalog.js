@@ -1,8 +1,17 @@
-// Phase 1 (chunk 1): data model for System Configuration + Essential Applications.
-// Additional sections will be added in subsequent chunks.
 export const SECTIONS = [
   { id: 'system-config', title: 'System Configuration', group: 'system', counter: false },
   { id: 'essential-apps', title: 'Essential Applications', group: 'essential', counter: true, expected: 16 },
+  { id: 'internet-comm', title: 'Internet & Communication', group: 'additional', counter: true, expected: 19 },
+  { id: 'office-prod', title: 'Office Productivity', group: 'additional', counter: true, expected: 10 },
+  { id: 'coding-devops', title: 'Coding and DevOps', group: 'additional', counter: true, expected: 12 },
+  { id: 'ai-coding', title: 'AI Coding Agents & Harnesses', group: 'additional', counter: true, expected: 13 },
+  { id: 'media-graphics', title: 'Media & Graphics', group: 'additional', counter: true, expected: 12 },
+  { id: 'gaming-emulation', title: 'Gaming & Emulation', group: 'additional', counter: true, expected: 11 },
+  { id: 'remote-net', title: 'Remote Networking', group: 'additional', counter: true, expected: 9 },
+  { id: 'file-sharing', title: 'File Sharing & Download', group: 'additional', counter: true, expected: 5 },
+  { id: 'system-tools', title: 'System Tools', group: 'additional', counter: true, expected: 12 },
+  { id: 'customization', title: 'Customization', group: 'additional', counter: true, expected: 9 },
+  { id: 'system-cleanup', title: 'System Cleanup', group: 'system', counter: false },
 ];
 
 export const CATALOG_ITEMS = [
@@ -153,3 +162,176 @@ export const CATALOG_ITEMS = [
   { id: 'nerd-fonts', label: 'Nerd Fonts', section: 'customization', installMethod: 'vendor', command: '', revertible: true, requiresInput: null, needsVerification: true, depends_on: [], conflicts_with: [], desktops: 'any', supported_fedora: [], tags: ['fonts'] },
   { id: 'system-cleanup', label: 'System Cleanup', section: 'system-cleanup', installMethod: 'cleanup', command: 'sudo dnf5 clean all && sudo dnf5 autoremove -y && flatpak uninstall --unused -y', revertible: false, requiresInput: null, needsVerification: false, depends_on: [], conflicts_with: [], desktops: 'any', supported_fedora: [], tags: ['cleanup'] },
 ];
+
+const CRITICAL_ITEMS = new Set([
+  'set-hostname', 'flathub-replace', 'ssh', 'firmware-update', 'wake-on-lan',
+  'veracrypt', 'nomachine', 'anydesk', 'rustdesk',
+]);
+const HIGH_CAUTION_ITEMS = new Set([
+  'configure-dnf', 'dnf-autoupdate', 'rpmfusion-repos', 'power-settings',
+  'virtualization', 'docker', 'zsh-omz',
+]);
+const CAUTION_ITEMS = new Set([
+  'unrar', 'spotify', 'google-chrome', 'microsoft-edge', 'dropbox', 'wps-office',
+  'microsoft-fonts', 'adobe-fonts', 'system-cleanup', 'vivaldi', 'opera',
+  'discord', 'steam', 'obsidian', 'onlyoffice',
+]);
+const RISK_REASONS = {
+  critical: 'This can change system identity, network exposure, firmware, or remove system-managed data.',
+  high: 'This changes system configuration, enables a service, or adds a software source.',
+  caution: 'This may involve proprietary licensing, large downloads, or software conflicts.',
+  safe: 'This installs software from a configured distribution or Flathub source.',
+};
+const ITEM_RISK_REASONS = {
+  'set-hostname': 'Changes the machine hostname that may be visible to local networks and services.',
+  ssh: 'Enables a network-accessible SSH service that can expose the system if credentials or firewall rules are weak.',
+  'firmware-update': 'Updates device firmware; interruption or an incompatible update can leave hardware unusable.',
+  'wake-on-lan': 'Changes network adapter settings so this machine can be woken remotely.',
+  'flathub-replace': "Would replace the existing Fedora Flatpak source and can change where applications receive updates.",
+  veracrypt: 'Disk encryption changes can make data inaccessible if the configuration or recovery material is lost.',
+  nomachine: 'Enables remote control of the computer and may expose it to unauthorized access.',
+  anydesk: 'Enables remote control of the computer and may expose it to unauthorized access.',
+  rustdesk: 'Enables remote control of the computer and may expose it to unauthorized access.',
+  'configure-dnf': 'Changes DNF package-manager defaults.',
+  'dnf-autoupdate': 'Enables automatic system package updates through a persistent timer.',
+  'rpmfusion-repos': 'Adds third-party repositories and asks you to trust their package-signing keys.',
+  'power-settings': 'Changes the active system power profile.',
+  virtualization: 'Adds virtualization packages and system services.',
+  docker: 'Adds container-management software that can grant elevated system access.',
+  'zsh-omz': 'Changes shell configuration; an incorrect default-shell change can impair login access.',
+  'system-cleanup': "Removes DNF's cached metadata and downloaded package files only; it does not remove installed software or user data.",
+  'google-chrome': 'Installs proprietary browser software subject to Google licensing and update policies.',
+  'microsoft-edge': 'Installs proprietary browser software subject to Microsoft licensing and update policies.',
+  vivaldi: 'Installs proprietary browser software subject to Vivaldi licensing and update policies.',
+  opera: 'Installs proprietary browser software subject to Opera licensing and update policies.',
+  spotify: 'Installs proprietary media software subject to Spotify licensing and service terms.',
+  discord: 'Installs proprietary communication software subject to Discord licensing and service terms.',
+  steam: 'Installs proprietary gaming software and may download large game data.',
+  obsidian: 'Installs proprietary note-taking software subject to its license and service terms.',
+  dropbox: 'Installs proprietary cloud software that may synchronize selected files to Dropbox.',
+  'microsoft-fonts': 'Installs fonts with vendor-specific license terms.',
+  'adobe-fonts': 'Installs fonts with vendor-specific license terms.',
+  unrar: 'Installs a proprietary archive utility with license restrictions.',
+  'wps-office': 'Installs proprietary office software subject to WPS licensing and service terms.',
+};
+const ITEM_DESCRIPTIONS = {
+  'set-hostname': 'Set the network-visible hostname for this Fedora computer.',
+  'configure-dnf': 'Enable the selected DNF performance defaults.',
+  'dnf-autoupdate': 'Install DNF Automatic and enable its scheduled update timer.',
+  'flathub-replace': 'Replace the Fedora Flatpak source with Flathub.',
+  ssh: 'Install the OpenSSH server and enable the sshd service.',
+  'firmware-update': 'Check for and install available device firmware updates.',
+  'rpmfusion-repos': 'Add RPM Fusion free and nonfree package repositories.',
+  'multimedia-codecs': 'Install multimedia playback and codec packages.',
+  'intel-codecs': 'Install Intel media acceleration support.',
+  'amd-codecs': 'Install AMD media acceleration support.',
+  virtualization: 'Install Fedora virtualization packages.',
+  'power-settings': 'Choose the active system power profile.',
+  'nodejs-npm': 'Install Node.js and npm; the exact Node.js major version needs verification.',
+  'flatpak-update': 'Update installed Flatpak applications.',
+  'wake-on-lan': 'Enable Wake-on-LAN for a selected network interface.',
+  'system-cleanup': 'Cleans up your system from unnecessary files.',
+};
+const REVERSIBLE_REASONS = {
+  'set-hostname': 'The script records the previous static hostname and restores it on revert.',
+  'dnf-autoupdate': 'The script records whether it installed DNF Automatic and enabled its timer.',
+  'rpmfusion-repos': 'The script removes RPM Fusion release packages only if it installed them.',
+  'power-settings': 'The script records and restores the previous power profile.',
+  'wake-on-lan': 'The script records and restores the previous Wake-on-LAN setting for the selected connection.',
+};
+const IRREVERSIBLE_REASONS = {
+  'configure-dnf': 'Changes DNF settings without recording their previous values.',
+  'firmware-update': 'Firmware updates change device firmware and cannot be rolled back reliably.',
+  virtualization: 'Installs a package group without recording all packages added by the group.',
+  'flatpak-update': 'Updates installed Flatpak applications; previous application versions may not be available.',
+  'system-cleanup': 'Removes cached DNF metadata and downloaded package files that cannot be restored.',
+};
+const RPM_FUSION_PACKAGES = new Set(['unrar', 'vlc', 'steam']);
+const SOURCE_BY_METHOD = {
+  dnf: 'Fedora package repositories',
+  flatpak: 'Flathub (requires the Flathub remote)',
+  repo: 'RPM Fusion (third-party repository)',
+  vendor: 'Vendor source; must be verified',
+  pip: 'Python package index; must be verified',
+  service: 'Fedora package repositories and systemd',
+  config: 'Local system configuration',
+  system: 'Firmware service',
+  cleanup: 'Fedora DNF package manager',
+};
+const CUSTOM_ACTION_ITEMS = new Set([
+  'set-hostname', 'configure-dnf', 'dnf-autoupdate', 'flathub-replace', 'ssh',
+  'firmware-update', 'rpmfusion-repos', 'multimedia-codecs', 'intel-codecs',
+  'amd-codecs', 'virtualization', 'power-settings', 'nodejs-npm',
+  'flatpak-update', 'wake-on-lan', 'system-cleanup',
+]);
+const VERIFIED_FLATPAK_IDS = new Set(['flatpak-update', 'flathub-replace']);
+
+for (const item of CATALOG_ITEMS) {
+  if (item.id === 'system-cleanup') {
+    item.description = ITEM_DESCRIPTIONS['system-cleanup'];
+    item.command = 'sudo dnf5 clean all';
+    item.revertible = false;
+  }
+  if (item.id === 'configure-dnf') item.revertible = false;
+  if (item.id === 'flathub-replace') {
+    item.description = "Replacing Fedora's Flatpak remote cannot be safely reversed without verifying the prior remote configuration.";
+    item.needsVerification = true;
+    item.revertible = false;
+  }
+  if (item.id === 'virtualization') item.revertible = false;
+  if (item.id === 'nodejs-npm') item.needsVerification = true;
+  if (item.id === 'zsh-omz') item.needsVerification = true;
+  if (item.installMethod === 'flatpak' && !VERIFIED_FLATPAK_IDS.has(item.id)) {
+    item.needsVerification = true;
+  }
+  item.risk = CRITICAL_ITEMS.has(item.id)
+    ? 'critical'
+    : HIGH_CAUTION_ITEMS.has(item.id)
+      ? 'high'
+      : CAUTION_ITEMS.has(item.id)
+        ? 'caution'
+        : 'safe';
+  item.riskReason = item.risk === 'safe'
+    ? RISK_REASONS.safe
+    : RISK_REASONS[item.risk];
+  item.riskReason = ITEM_RISK_REASONS[item.id] || item.riskReason;
+  item.desktopApplicability = item.desktops === 'any' ? ['gnome', 'kde'] : [item.desktops];
+  if (RPM_FUSION_PACKAGES.has(item.id) && !item.depends_on.includes('rpmfusion-repos')) {
+    item.depends_on.push('rpmfusion-repos');
+  }
+  item.recommendedFor = [];
+  item.supportedVersions = ['41', '42', '43', '44'];
+  item.installSource = RPM_FUSION_PACKAGES.has(item.id)
+    ? 'RPM Fusion (official third-party repository)'
+    : SOURCE_BY_METHOD[item.installMethod] || 'Needs verification';
+  item.description ??= ITEM_DESCRIPTIONS[item.id] || `Install ${item.label} from ${item.installSource}.`;
+  item.installCommands = item.needsVerification || !item.command ? [] : [item.command];
+  item.revertCommands = item.revertible
+    ? ['Remove only packages and repositories recorded as installed by this script; restore captured system values.']
+    : 'not reversible';
+  item.revertReason = item.revertible
+    ? REVERSIBLE_REASONS[item.id] || 'The script records package changes and removes only packages it installed.'
+    : IRREVERSIBLE_REASONS[item.id] || 'This operation changes existing state or removes data that cannot be reliably restored.';
+  item.requirements = [
+    ...(item.installMethod === 'flatpak' ? ['flatpak', 'Flathub remote'] : []),
+    ...item.depends_on,
+  ];
+  item.licenseNotes = item.risk === 'caution' ? 'Review the upstream software license and terms.' : '';
+  if (item.needsVerification || (!item.command && !CUSTOM_ACTION_ITEMS.has(item.id))) item.needsVerification = true;
+}
+
+const COMMON_RECOMMENDATIONS = new Set([
+  'configure-dnf', 'dnf-autoupdate', 'rpmfusion-repos', 'multimedia-codecs',
+  'flatpak-update', 'flathub-replace', 'git', 'curl', 'wget', 'htop', 'btop',
+  'fastfetch', 'rsync', 'unzip', 'tmux',
+]);
+for (const item of CATALOG_ITEMS) {
+  if (COMMON_RECOMMENDATIONS.has(item.id)) item.recommendedFor = ['gnome', 'kde'];
+  if (item.id === 'gnome-tweaks' || item.id === 'flatseal' || item.id === 'extension-manager') {
+    item.recommendedFor = ['gnome'];
+  }
+  if (item.id === 'kde-addons') item.recommendedFor = ['kde'];
+  if (item.id === 'gnome-tweaks' || item.id === 'extension-manager') {
+    item.notApplicableNote = 'Not applicable to KDE Plasma.';
+  }
+}
