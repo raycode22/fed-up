@@ -115,7 +115,7 @@ const state = {
   inputs: {},
   version: '44',
   desktop: 'gnome',
-  outputMode: 'quiet',
+  outputMode: 'normal',
   theme: 'system',
   textSize: SCRIPT_TEXT_SIZE.default,
   activeScript: 'setup',
@@ -591,6 +591,8 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
+import time
 
 parser = argparse.ArgumentParser(description="Fed-up Fedora setup script")
 parser.add_argument("--metadata-file", required=True)
@@ -617,6 +619,7 @@ state_file = os.path.join(os.environ.get("FED_UP_STATE_DIR", default_state_dir),
 verbose = args.verbose or (data["outputMode"] == "verbose" and not args.quiet)
 quiet = args.quiet or (data["outputMode"] == "quiet" and not args.verbose)
 auto_approve = args.yes
+current_action_label = None
 
 class ActionFailure(Exception):
     pass
@@ -624,19 +627,59 @@ class ActionFailure(Exception):
 def fail(message):
     raise SystemExit(message)
 
+def color(text, code):
+    if sys.stdout.isatty() and "NO_COLOR" not in os.environ and os.environ.get("TERM") != "dumb":
+        return f"\033[{code}m{text}\033[0m"
+    return text
+
 def run(argv, *, check=True, capture=False, interactive=False):
     try:
-        options = {"check": False, "text": True}
-        if capture or (not verbose and not interactive):
-            options["capture_output"] = True
-        result = subprocess.run(argv, **options)
+        show_spinner = (
+            not capture
+            and not interactive
+            and not verbose
+            and not quiet
+            and current_action_label
+            and sys.stdout.isatty()
+            and sys.stdin.isatty()
+            and os.environ.get("TERM") != "dumb"
+        )
+        if show_spinner:
+            with tempfile.TemporaryFile(mode="w+t", encoding="utf-8") as command_output:
+                process = subprocess.Popen(
+                    argv,
+                    stdout=command_output,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                )
+                frames = "|/-\\"
+                frame = 0
+                try:
+                    while process.poll() is None:
+                        indicator = color(frames[frame % len(frames)], "36")
+                        sys.stdout.write(f"\r  {indicator} Working: {current_action_label}")
+                        sys.stdout.flush()
+                        frame += 1
+                        time.sleep(0.1)
+                    returncode = process.wait()
+                finally:
+                    sys.stdout.write("\r\033[K")
+                    sys.stdout.flush()
+                command_output.seek(0)
+                output = command_output.read()
+            result = subprocess.CompletedProcess(argv, returncode, output, "")
+        else:
+            options = {"check": False, "text": True}
+            if capture or (not verbose and not interactive):
+                options["capture_output"] = True
+            result = subprocess.run(argv, **options)
         if not capture and verbose:
             if result.stdout:
                 print(result.stdout, end="")
             if result.stderr:
                 print(result.stderr, end="", file=sys.stderr)
         if check and result.returncode != 0:
-            details = result.stderr.strip() if result.stderr else ""
+            details = (result.stderr or result.stdout or "").strip()
             raise ActionFailure(f"Command failed ({result.returncode}): {argv[0]}{': ' + details if details else ''}")
         return result
     except FileNotFoundError as error:
@@ -655,7 +698,7 @@ def confirm(message):
     if not sys.stdin.isatty():
         fail("A confirmation is required; run interactively or pass --yes after reviewing the script.")
     try:
-        return input(message + " [y/N] ").strip().lower() in ("y", "yes")
+        return input(message + " [y/N, default: no] ").strip().lower() in ("y", "yes")
     except EOFError:
         return False
 
@@ -884,8 +927,17 @@ def choose_menu(title, choices):
         return None
     if shutil.which("gum") and sys.stdin.isatty():
         try:
+            height = max(4, min(len(choices), shutil.get_terminal_size((80, 24)).lines - 8, 14))
             result = subprocess.run(
-                ["gum", "choose", "--header", title, *choices],
+                [
+                    "gum", "choose",
+                    "--header", title,
+                    "--height", str(height),
+                    "--cursor-prefix", "> ",
+                    "--selected-prefix", "[x] ",
+                    "--unselected-prefix", "[ ] ",
+                    *choices,
+                ],
                 text=True,
                 stdout=subprocess.PIPE,
             )
@@ -895,19 +947,19 @@ def choose_menu(title, choices):
             return result.stdout.strip() if result.returncode == 0 else None
     if not sys.stdin.isatty():
         return None
-    print(f"\n{title}")
+    print(f"\n{color(title, '1;36')}")
     for index, choice in enumerate(choices, start=1):
         print(f"  {index}. {choice}")
     while True:
         try:
-            answer = input("Choose a number (0 to go back): ").strip()
+            answer = input(f"Select [1-{len(choices)}, 0=back]: ").strip()
         except EOFError:
             return None
         if answer == "0":
             return None
         if answer.isdigit() and 1 <= int(answer) <= len(choices):
             return choices[int(answer) - 1]
-        print(f"Enter a number from 1 to {len(choices)}, or 0 to go back.")
+        print(f"Enter 1-{len(choices)} to choose an option, or 0 to go back.")
 
 def ask_value(prompt, current=""):
     if shutil.which("gum") and sys.stdin.isatty():
@@ -971,28 +1023,32 @@ def edit_operation_input(operation):
     return None
 
 def show_operation(operation):
-    print(f"\n{operation['label']} — {operation['risk'].upper()} ({operation['section']})")
-    print(operation.get("description") or "No additional description is available.")
+    risk = operation["risk"].upper()
+    print(f"\n{color(operation['label'], '1')}  [{color(risk, '31' if risk == 'CRITICAL' else '33' if risk in ('HIGH', 'CAUTION') else '32')}]")
+    print(f"Category: {operation['section']}")
+    print(f"  {operation.get('description') or 'No additional description is available.'}")
+    print("\nImpact and recovery")
     if operation.get("riskReason"):
-        print(f"Risk: {operation['riskReason']}")
-    print(f"Source: {operation.get('source') or 'Not specified'}")
-    print(f"Reversibility: {operation.get('revertReason') or ('Reversible' if operation.get('reversible') else 'Not reliably reversible')}")
+        print(f"  Risk: {operation['riskReason']}")
+    print(f"  Reversibility: {operation.get('revertReason') or ('Reversible' if operation.get('reversible') else 'Not reliably reversible')}")
     lookup = {entry["id"]: entry for entry in catalog}
     requirements = [lookup[item_id]["label"] for item_id in operation.get("dependsOn", []) if item_id in lookup]
     if requirements:
-        print("Required actions: " + ", ".join(requirements))
+        print("\nRequirements")
+        print("  Requires: " + ", ".join(requirements))
     conflicts = [lookup[item_id]["label"] for item_id in operation.get("conflictsWith", []) if item_id in lookup]
     if conflicts:
-        print("Conflicts with: " + ", ".join(conflicts))
+        print("  Conflicts with: " + ", ".join(conflicts))
     if operation.get("inputType"):
-        print(f"Current value: {operation.get('input') or '(not set)'}")
+        print(f"\nConfiguration value: {operation.get('input') or '(not set)'}")
+    print(f"\nInstall source: {operation.get('source') or 'Not specified'}")
     docs = operation.get("docs", [])
     if docs:
-        print("Documentation:")
+        print("Documentation")
         for document in docs:
             print(f"  {document['label']}: {document['url']}")
     else:
-        print("Documentation: No curated official link is available for this item.")
+        print("Documentation: No curated link is available for this item.")
 
 def find_conflicts(selected):
     pairs = []
@@ -1049,7 +1105,7 @@ def add_with_dependencies(selected, operation, visiting=None):
             return False
         print(f"Adding required action: {dependency['label']}.")
         if dependency["risk"] == "critical" and not confirm(
-            f"Required action is Critical: {dependency['label']}. Continue?"
+            f"{operation['label']} requires the Critical action '{dependency['label']}'. Add it?"
         ):
             print(f"Keeping {operation['label']} unselected because its required action was declined.")
             visiting.remove(operation["id"])
@@ -1077,9 +1133,14 @@ def add_missing_dependencies(selected):
         dependency = lookup.get(dependency_id)
         if dependency is None or not selectable(dependency):
             fail(f"A selected action requires unavailable catalog action {dependency_id}.")
-        print(f"Required by the current selection: {dependency['label']}.")
+        requiring = next(
+            operation["label"]
+            for operation in selected.values()
+            if dependency_id in operation.get("dependsOn", [])
+        )
+        print(f"Required action: {dependency['label']} (needed by {requiring}).")
         if dependency["risk"] == "critical" and not confirm(
-            f"Required action is Critical: {dependency['label']}. Continue?"
+            f"{requiring} requires the Critical action '{dependency['label']}'. Add it?"
         ):
             fail(f"Cannot continue without required action {dependency['label']}.")
         if not add_with_dependencies(selected, dict(dependency)):
@@ -1101,82 +1162,107 @@ def choose_unavailable():
 def review_catalog(selected, outcomes, attempt_counts):
     lookup = {entry["id"]: entry for entry in catalog}
     available = [entry for entry in catalog if selectable(entry)]
+    sections = {}
+    for operation in available:
+        sections.setdefault(operation["section"], []).append(operation)
+    section_choices = {
+        f"{section} ({sum(item['id'] in selected for item in items)}/{len(items)} selected)": section
+        for section, items in sections.items()
+    }
+    unavailable_label = f"View unavailable / unverified actions ({len(catalog) - len(available)})"
     while True:
-        choices = []
-        choice_ids = {}
-        for operation in available:
-            status = "ON" if operation["id"] in selected else "off"
-            outcome = outcomes.get(operation["id"], {}).get("status")
-            if outcome == "installed":
-                status = "DONE"
-            elif outcome in ("failed", "skipped"):
-                remaining = max(0, 3 - attempt_counts.get(operation["id"], 0))
-                status = outcome.upper() + (f" — {remaining} retries left" if remaining else " — attempt limit reached")
-            label = f"[{status}] [{operation['risk'].upper()}] {operation['label']} — {operation['section']}"
-            choices.append(label)
-            choice_ids[label] = operation["id"]
-        unavailable_label = f"View unavailable / unverified actions ({len(catalog) - len(available)})"
-        choices.extend([unavailable_label, "Done reviewing"])
-        choice = choose_menu("Review or change setup actions", choices)
+        choices = list(section_choices)
+        if len(catalog) > len(available):
+            choices.append(unavailable_label)
+        choices.append("Done reviewing")
+        choice = choose_menu(
+            f"Review setup actions · {len(selected)} selected · choose a category",
+            choices,
+        )
         if choice is None or choice == "Done reviewing":
             return
         if choice == unavailable_label:
             choose_unavailable()
             continue
-        operation_id = choice_ids.get(choice)
-        operation = lookup.get(operation_id)
-        if operation is None:
+        section = section_choices.get(choice)
+        if section is None:
             continue
-        show_operation(operation)
-        actions = ["Toggle selection"]
-        if operation.get("inputType"):
-            actions.insert(0, "Edit value")
-        actions.append("Back to action list")
-        action = choose_menu(f"Action: {operation['label']}", actions)
-        if action == "Edit value":
-            value = edit_operation_input(operation)
-            if value is not None:
-                operation["input"] = value
+        section_items = sections[section]
+        while True:
+            choices = []
+            choice_ids = {}
+            for operation in section_items:
+                status = "SELECTED" if operation["id"] in selected else "NOT SELECTED"
+                outcome = outcomes.get(operation["id"], {}).get("status")
+                if outcome == "installed":
+                    status = "DONE"
+                elif outcome in ("failed", "skipped"):
+                    remaining = max(0, 3 - attempt_counts.get(operation["id"], 0))
+                    status = outcome.upper() + (f" · {remaining} retries left" if remaining else " · attempt limit reached")
+                label = f"[{status}] [{operation['risk'].upper()}] {operation['label']}"
+                choices.append(label)
+                choice_ids[label] = operation["id"]
+            choices.append("Back to categories")
+            item_choice = choose_menu(
+                f"{section} · {sum(item['id'] in selected for item in section_items)}/{len(section_items)} selected",
+                choices,
+            )
+            if item_choice is None or item_choice == "Back to categories":
+                break
+            operation_id = choice_ids.get(item_choice)
+            operation = lookup.get(operation_id)
+            if operation is None:
+                continue
+            show_operation(operation)
+            actions = ["Toggle selection"]
+            if operation.get("inputType"):
+                actions.insert(0, "Edit configuration value")
+            actions.append("Back")
+            action = choose_menu(f"What would you like to do with {operation['label']}?", actions)
+            if action == "Edit configuration value":
+                value = edit_operation_input(operation)
+                if value is not None:
+                    operation["input"] = value
+                    if operation_id in selected:
+                        selected[operation_id]["input"] = value
+            elif action == "Toggle selection":
                 if operation_id in selected:
-                    selected[operation_id]["input"] = value
-        elif action == "Toggle selection":
-            if operation_id in selected:
-                removed = remove_with_dependents(selected, {operation_id})
-                for removed_id in removed:
-                    if outcomes.get(removed_id, {}).get("status") in ("failed", "skipped"):
-                        outcomes.pop(removed_id, None)
-                print("Removed: " + ", ".join(lookup[item_id]["label"] for item_id in removed if item_id in lookup))
-            else:
-                candidate = dict(operation)
-                if candidate.get("inputType") and not input_is_valid(candidate, candidate.get("input", "")):
-                    value = edit_operation_input(candidate)
-                    if value is None:
-                        print(f"{candidate['label']} remains unselected; a valid value is required.")
-                        continue
-                    candidate["input"] = value
-                trial = dict(selected)
-                before = set(trial)
-                if not add_with_dependencies(trial, candidate):
-                    continue
-                changed_ids = (set(trial) - before) | {operation_id}
-                conflicts = [pair for pair in find_conflicts(trial) if changed_ids.intersection(pair)]
-                replace_allowed = True
-                for left_id, right_id in conflicts:
-                    displaced_id = right_id if left_id in changed_ids else left_id
-                    displaced = lookup[displaced_id]
-                    if not confirm(
-                        f"{candidate['label']} conflicts with {displaced['label']}. Remove the conflicting action and its dependents?"
-                    ):
-                        replace_allowed = False
-                        break
-                    remove_with_dependents(trial, {displaced_id})
-                if replace_allowed:
-                    selected.clear()
-                    selected.update(trial)
-                    if outcomes.get(operation_id, {}).get("status") in ("failed", "skipped"):
-                        outcomes.pop(operation_id, None)
+                    removed = remove_with_dependents(selected, {operation_id})
+                    for removed_id in removed:
+                        if outcomes.get(removed_id, {}).get("status") in ("failed", "skipped"):
+                            outcomes.pop(removed_id, None)
+                    print("Removed: " + ", ".join(lookup[item_id]["label"] for item_id in removed if item_id in lookup))
                 else:
-                    print(f"{candidate['label']} was not added; the existing selection was kept.")
+                    candidate = dict(operation)
+                    if candidate.get("inputType") and not input_is_valid(candidate, candidate.get("input", "")):
+                        value = edit_operation_input(candidate)
+                        if value is None:
+                            print(f"{candidate['label']} remains unselected; a valid value is required.")
+                            continue
+                        candidate["input"] = value
+                    trial = dict(selected)
+                    before = set(trial)
+                    if not add_with_dependencies(trial, candidate):
+                        continue
+                    changed_ids = (set(trial) - before) | {operation_id}
+                    conflicts = [pair for pair in find_conflicts(trial) if changed_ids.intersection(pair)]
+                    replace_allowed = True
+                    for left_id, right_id in conflicts:
+                        displaced_id = right_id if left_id in changed_ids else left_id
+                        displaced = lookup[displaced_id]
+                        if not confirm(
+                            f"{candidate['label']} conflicts with {displaced['label']}. Remove the conflicting action and its dependents?"
+                        ):
+                            replace_allowed = False
+                            break
+                        remove_with_dependents(trial, {displaced_id})
+                    if replace_allowed:
+                        selected.clear()
+                        selected.update(trial)
+                        if outcomes.get(operation_id, {}).get("status") in ("failed", "skipped"):
+                            outcomes.pop(operation_id, None)
+                    else:
+                        print(f"{candidate['label']} was not added; the existing selection was kept.")
 
 def ensure_flatpak(selected):
     needs_flatpak = any(
@@ -1211,6 +1297,7 @@ def results_summary(outcomes):
         print(f"    - ... and {len(unavailable) - 5} more; choose the unavailable-actions view from Review.")
 
 def run_selected(selected, outcomes, attempt_counts):
+    global current_action_label
     added_dependencies = add_missing_dependencies(selected)
     if added_dependencies:
         print("Required actions were added. Review the updated selection before starting.")
@@ -1272,7 +1359,9 @@ def run_selected(selected, outcomes, attempt_counts):
             }
             continue
         if operation["risk"] == "critical" and operation["id"] != "firmware-update" and not auto_approve:
-            if not confirm(f"Critical change: {operation['label']}. Continue?"):
+            if not confirm(
+                f"Run Critical action '{operation['label']}'? {operation.get('riskReason') or 'Review its impact first.'}"
+            ):
                 outcomes[operation["id"]] = {
                     "status": "skipped", "label": operation["label"], "reason": "Critical confirmation declined.",
                 }
@@ -1282,7 +1371,8 @@ def run_selected(selected, outcomes, attempt_counts):
             attempt_counts[operation["id"]] = attempt
             try:
                 if not quiet:
-                    print(f"Applying: {operation['label']} (attempt {attempt}/3)")
+                    print(f"Starting: {operation['label']} (attempt {attempt}/3)")
+                current_action_label = operation["label"]
                 execute_action(operation, previous)
                 try:
                     save_state(previous)
@@ -1295,6 +1385,8 @@ def run_selected(selected, outcomes, attempt_counts):
                     stop_requested = True
                     break
                 outcomes[operation["id"]] = {"status": "installed", "label": operation["label"]}
+                if not quiet:
+                    print(f"{color('Completed', '32')}: {operation['label']}")
                 break
             except (ActionFailure, SystemExit) as error:
                 reason = str(error) or "The operation failed without an error message."
@@ -1333,6 +1425,8 @@ def run_selected(selected, outcomes, attempt_counts):
                     "reason": reason if decision == "Skip this action" or not sys.stdin.isatty() else "Installer stopped.",
                 }
                 break
+            finally:
+                current_action_label = None
         if stop_requested:
             break
     return True
@@ -1355,16 +1449,20 @@ def installer_menu():
             results_summary(outcomes)
         return valid and not any(result["status"] == "failed" for result in outcomes.values())
     while True:
-        choices = [
-            f"Output: {'verbose' if verbose else 'quiet'} (toggle)",
-            f"Auto-approve confirmations: {'on' if auto_approve else 'off'} (toggle)",
-            "Quit",
-            "Review or change selections",
-        ]
+        output_mode = "verbose" if verbose else "quiet" if quiet else "normal"
+        choices = ["Review or change selections"]
         if selected:
             choices.append(f"Run selected actions ({len(selected)})")
-        choice = choose_menu("Fed-up installer — review changes before anything runs", choices)
-        if choice is None or choice == "Quit":
+        choices.extend([
+            f"Change output mode (currently {output_mode})",
+            f"Change confirmation behavior (currently {'automatic' if auto_approve else 'ask before changes'})",
+            "Exit installer",
+        ])
+        choice = choose_menu(
+            f"Fed-up setup · {len(selected)} selected · review before running",
+            choices,
+        )
+        if choice is None or choice == "Exit installer":
             print("Fed-up setup cancelled; no further actions will run.")
             return True
         if choice == "Review or change selections":
@@ -1377,14 +1475,34 @@ def installer_menu():
                 valid = False
             if valid:
                 results_summary(outcomes)
-                next_step = choose_menu("Setup pass complete", ["Return to menu", "Exit"])
-                if next_step != "Return to menu":
+                next_step = choose_menu(
+                    "Setup pass complete · what would you like to do next?",
+                    ["Return to installer menu", "Exit installer"],
+                )
+                if next_step != "Return to installer menu":
                     return not any(result["status"] == "failed" for result in outcomes.values())
-        elif choice.startswith("Output:"):
-            verbose = not verbose
-            quiet = not verbose
-        elif choice.startswith("Auto-approve confirmations:"):
-            auto_approve = not auto_approve
+        elif choice.startswith("Change output mode"):
+            output_choice = choose_menu(
+                "Choose how much command output to show",
+                [
+                    "Normal — show progress and a spinner",
+                    "Quiet — hide routine progress",
+                    "Verbose — show command output",
+                ],
+            )
+            if output_choice:
+                verbose = output_choice.startswith("Verbose")
+                quiet = output_choice.startswith("Quiet")
+        elif choice.startswith("Change confirmation behavior"):
+            approval_choice = choose_menu(
+                "Automatically approve confirmations? This can bypass critical-action prompts.",
+                [
+                    "No — ask before changes (recommended)",
+                    "Yes — skip confirmation prompts",
+                ],
+            )
+            if approval_choice:
+                auto_approve = approval_choice.startswith("Yes")
 
 def do_revert():
     prior = load_state()
