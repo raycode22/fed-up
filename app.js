@@ -104,7 +104,7 @@ const SPECIAL_ACTIONS = {
   'amd-codecs': { type: 'packages', manager: 'dnf', packages: ['mesa-va-drivers', 'mesa-vdpau-drivers'] },
   virtualization: { type: 'group', group: 'Virtualization' },
   'power-settings': { type: 'power-profile' },
-  'nodejs-npm': { type: 'packages', manager: 'dnf', packages: ['nodejs', 'npm'] },
+  'nodejs-npm': { type: 'packages', manager: 'dnf', packages: ['nodejs22', 'nodejs22-npm'] },
   'flatpak-update': { type: 'flatpak-update' },
   'wake-on-lan': { type: 'wake-on-lan' },
   'system-cleanup': { type: 'cleanup' },
@@ -197,7 +197,7 @@ function itemAction(item) {
     if (match) return { type: 'packages', manager: 'dnf', packages: match[1].split(' ') };
   }
   if (item.installMethod === 'flatpak') {
-    const match = item.command.match(/^flatpak install -y flathub ([A-Za-z0-9_.-]+)$/);
+    const match = item.command.match(/^flatpak install flathub ([A-Za-z0-9_.-]+)$/);
     if (match) return { type: 'packages', manager: 'flatpak', packages: [match[1]] };
   }
   return null;
@@ -366,13 +366,28 @@ function renderCategories() {
       source.className = 'item-source small-note';
       source.textContent = `Source: ${item.installSource}`;
       main.append(itemTitle, description, source);
+      for (const doc of item.installDocs || []) {
+        const link = document.createElement('a');
+        link.className = 'item-source small-note';
+        link.href = doc.url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = doc.label;
+        main.append(link);
+      }
+      if (item.verificationNote && !item.needsVerification) {
+        const note = document.createElement('p');
+        note.className = 'item-source small-note';
+        note.textContent = item.verificationNote;
+        main.append(note);
+      }
       const reason = document.createElement('p');
       reason.className = `item-warning small-note risk-${item.risk}`;
       if (item.risk !== 'safe') reason.textContent = `${RISK_LABELS[item.risk]}: ${userFacingRisk(item)}`;
       if (item.needsVerification || !available) {
         const disabled = document.createElement('p');
         disabled.className = 'item-warning field-error';
-        disabled.textContent = 'Needs verification: script generation is disabled until an official source and safe install method are confirmed.';
+        disabled.textContent = item.verificationNote || 'No verified install action is available for this item.';
         main.append(disabled);
       }
       if (!compatible) {
@@ -482,7 +497,7 @@ function actionFor(item) {
 }
 
 function installerDocs(item) {
-  const docs = [];
+  const docs = [...(item.installDocs || [])];
   if (['dnf', 'service', 'cleanup'].includes(item.installMethod) || item.id === 'configure-dnf') {
     docs.push({
       label: 'Fedora DNF guide',
@@ -548,7 +563,7 @@ function buildOperation(item) {
     action,
     eligible: Boolean(action) && !item.needsVerification,
     unavailableReason: item.needsVerification
-      ? 'Installation source or instructions still need verification.'
+      ? item.verificationNote || 'No safe automated install action is available.'
       : action ? '' : 'No verified install action is available.',
     inputType: item.requiresInput?.type || null,
     inputOptions: item.requiresInput?.type === 'power-profile'
@@ -609,10 +624,10 @@ class ActionFailure(Exception):
 def fail(message):
     raise SystemExit(message)
 
-def run(argv, *, check=True, capture=False):
+def run(argv, *, check=True, capture=False, interactive=False):
     try:
         options = {"check": False, "text": True}
-        if capture or not verbose:
+        if capture or (not verbose and not interactive):
             options["capture_output"] = True
         result = subprocess.run(argv, **options)
         if not capture and verbose:
@@ -745,7 +760,11 @@ def execute_action(operation, prior):
                 run(["dnf", "install", "-y", *packages])
             else:
                 scope = "--system" if os.geteuid() == 0 else "--user"
-                run(["flatpak", "install", scope, "-y", "flathub", *packages])
+                command = ["flatpak", "install", scope]
+                if auto_approve:
+                    command.append("--assumeyes")
+                command.extend(["flathub", *packages])
+                run(command, interactive=not auto_approve)
         except (ActionFailure, SystemExit):
             remember_new_packages(prior, manager, existed)
             raise
