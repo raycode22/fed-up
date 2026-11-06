@@ -92,6 +92,8 @@ const ITEM_TAG_ICONS = {
   wine: 'i-box',
 };
 const SPECIAL_ACTIONS = {
+  'google-chrome': { type: 'google-chrome', manager: 'dnf' },
+  brave: { type: 'brave-repo', manager: 'dnf' },
   'set-hostname': { type: 'hostname' },
   'configure-dnf': { type: 'configure-dnf' },
   'dnf-autoupdate': { type: 'dnf-autoupdate' },
@@ -337,7 +339,11 @@ function renderCategories() {
       const compatible = item.desktopApplicability.includes(state.desktop);
       const available = Boolean(itemAction(item));
       check.disabled = !compatible || !available;
-      check.setAttribute('aria-describedby', `desc-${item.id}`);
+      row.classList.toggle('item-unavailable', item.needsVerification || !available);
+      check.setAttribute(
+        'aria-describedby',
+        `desc-${item.id}${item.needsVerification || !available ? ` status-${item.id}` : ''}`,
+      );
       const iconSymbol = item.icon || (item.tags || []).map((tag) => ITEM_TAG_ICONS[tag]).find(Boolean) || SECTION_ICONS[item.section] || 'i-info';
       const icon = svgIcon(iconSymbol, 'icon item-icon');
       const main = document.createElement('div');
@@ -346,6 +352,12 @@ function renderCategories() {
       itemTitle.className = 'item-title';
       itemTitle.htmlFor = check.id;
       itemTitle.append(document.createTextNode(item.label), riskChip(item.risk, false, item.riskReason));
+      if (item.needsVerification || !available) {
+        const badge = document.createElement('span');
+        badge.className = 'badge badge-work-in-progress';
+        badge.textContent = 'In the works';
+        itemTitle.append(badge);
+      }
       if (recommended.has(item.id) && item.risk !== 'critical') {
         const badge = document.createElement('span');
         badge.className = 'badge';
@@ -386,8 +398,9 @@ function renderCategories() {
       if (item.risk !== 'safe') reason.textContent = `${RISK_LABELS[item.risk]}: ${userFacingRisk(item)}`;
       if (item.needsVerification || !available) {
         const disabled = document.createElement('p');
-        disabled.className = 'item-warning field-error';
-        disabled.textContent = item.verificationNote || 'No verified install action is available for this item.';
+        disabled.className = 'item-warning item-work-status small-note';
+        disabled.id = `status-${item.id}`;
+        disabled.textContent = `Still in the works — ${item.verificationNote || 'a safe, verified installation route is not available yet.'}`;
         main.append(disabled);
       }
       if (!compatible) {
@@ -585,8 +598,10 @@ function pythonPayload() {
   return String.raw`#!/usr/bin/env python3
 import argparse
 import base64
+import configparser
 import json
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -759,6 +774,75 @@ def save_state(value):
 def installed_rpm(package):
     return subprocess.run(["rpm", "-q", package], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
 
+def dnf_repositories():
+    result = run(["dnf", "repo", "list", "--all", "--json"], capture=True)
+    try:
+        repositories = json.loads(result.stdout)
+    except json.JSONDecodeError as error:
+        raise ActionFailure(f"Could not read DNF repository configuration: {error}") from error
+    if not isinstance(repositories, list):
+        raise ActionFailure("DNF returned an unexpected repository list.")
+    return {
+        repository.get("id"): repository
+        for repository in repositories
+        if isinstance(repository, dict) and isinstance(repository.get("id"), str)
+    }
+
+def verify_brave_repository(repository):
+    base_urls = repository.get("base_url", [])
+    gpg_keys = repository.get("gpg_key", [])
+    if isinstance(base_urls, str):
+        base_urls = [base_urls]
+    if isinstance(gpg_keys, str):
+        gpg_keys = [gpg_keys]
+    if (
+        not repository.get("pkg_gpgcheck")
+        or not any(
+            isinstance(url, str) and "brave-browser-rpm-release.s3.brave.com" in url
+            for url in base_urls
+        )
+        or not any(
+            isinstance(url, str) and url.rstrip("/").endswith("brave-core.asc")
+            for url in gpg_keys
+        )
+    ):
+        raise ActionFailure(
+            "A repository named brave-browser already exists but does not match Brave's signed official repository. "
+            "Review or remove that repository manually before retrying."
+        )
+
+def remove_owned_brave_repository(repository):
+    raw_path = repository.get("path", "")
+    if not isinstance(raw_path, str) or not os.path.isabs(raw_path):
+        raise ActionFailure("Refusing to remove a Brave repository with an invalid file path.")
+    path = os.path.normpath(raw_path)
+    repository_directory = os.path.realpath(os.path.dirname(path))
+    if (
+        os.path.basename(path) != "fed-up-brave-browser.repo"
+        or os.path.commonpath(("/etc", repository_directory)) != "/etc"
+        or os.path.islink(path)
+    ):
+        raise ActionFailure(f"Refusing to remove unexpected Brave repository path: {path}")
+    if not os.path.exists(path):
+        return
+    config = configparser.ConfigParser(interpolation=None)
+    try:
+        loaded = config.read(path, encoding="utf-8")
+    except (OSError, configparser.Error) as error:
+        raise ActionFailure(f"Could not verify the Fed-up Brave repository file: {error}") from error
+    if (
+        not loaded
+        or not config.has_section("brave-browser")
+        or config.get("brave-browser", "gpgcheck", fallback="").strip() != "1"
+        or "brave-browser-rpm-release.s3.brave.com" not in config.get("brave-browser", "baseurl", fallback="")
+        or not config.get("brave-browser", "gpgkey", fallback="").rstrip("/").endswith("brave-core.asc")
+    ):
+        raise ActionFailure(f"Refusing to remove modified Brave repository configuration: {path}")
+    try:
+        os.unlink(path)
+    except OSError as error:
+        raise ActionFailure(f"Could not remove the Fed-up Brave repository file: {error}") from error
+
 def installed_flatpak(app_id):
     if not shutil.which("flatpak"):
         return False
@@ -791,7 +875,76 @@ def remember_new_packages(prior, manager, packages):
 def execute_action(operation, prior):
     action = operation["action"]
     kind = action["type"]
-    if kind == "packages":
+    if kind == "google-chrome":
+        architecture = platform.machine()
+        rpm_architecture = {"x86_64": "x86_64", "aarch64": "aarch64"}.get(architecture)
+        if not rpm_architecture:
+            raise ActionFailure(f"Google Chrome's official RPM is not available for {architecture}.")
+        if not confirm(
+            "Google provides this signed Chrome RPM for Fedora. DNF will verify the package signature before installation."
+        ):
+            raise ActionFailure("Google Chrome installation confirmation declined.")
+        package = "google-chrome-stable"
+        was_installed = installed_rpm(package)
+        rpm_url = f"https://dl.google.com/linux/direct/google-chrome-stable_current_{rpm_architecture}.rpm"
+        try:
+            run(["dnf", "install", "-y", rpm_url])
+        except (ActionFailure, SystemExit):
+            remember_new_packages(prior, "dnf", [(package, was_installed)])
+            raise
+        remember_new_packages(prior, "dnf", [(package, was_installed)])
+    elif kind == "brave-repo":
+        repositories = dnf_repositories()
+        repository = repositories.get("brave-browser")
+        if repository:
+            verify_brave_repository(repository)
+        else:
+            if not confirm(
+                "Add Brave's official DNF repository? Its configuration enables RPM signature verification."
+            ):
+                raise ActionFailure("Brave repository confirmation declined.")
+            plugin_was_installed = installed_rpm("dnf-plugins-core")
+            try:
+                run(["dnf", "--repo=fedora,updates", "install", "-y", "dnf-plugins-core"])
+            except (ActionFailure, SystemExit):
+                remember_new_packages(prior, "dnf", [("dnf-plugins-core", plugin_was_installed)])
+                raise
+            remember_new_packages(prior, "dnf", [("dnf-plugins-core", plugin_was_installed)])
+            run([
+                "dnf", "config-manager", "addrepo",
+                "--from-repofile=https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo",
+                "--save-filename=fed-up-brave-browser.repo",
+            ])
+            expected_path = "/etc/yum.repos.d/fed-up-brave-browser.repo"
+            owned_repository = {
+                "id": "brave-browser",
+                "path": expected_path,
+            }
+            prior.setdefault("dnf_repositories", []).append(owned_repository)
+            repositories = dnf_repositories()
+            repository = repositories.get("brave-browser")
+            if not repository:
+                raise ActionFailure("Brave's repository was not present after DNF added its configuration.")
+            repository_path = repository.get("repo_file_path")
+            if (
+                not isinstance(repository_path, str)
+                or not os.path.isabs(repository_path)
+                or os.path.basename(os.path.normpath(repository_path)) != "fed-up-brave-browser.repo"
+            ):
+                raise ActionFailure(
+                    "DNF did not report the expected Brave repository file path; "
+                    "review its repository configuration manually."
+                )
+            owned_repository["path"] = os.path.normpath(repository_path)
+            verify_brave_repository(repository)
+        was_installed = installed_rpm("brave-browser")
+        try:
+            run(["dnf", "install", "-y", "brave-browser"])
+        except (ActionFailure, SystemExit):
+            remember_new_packages(prior, "dnf", [("brave-browser", was_installed)])
+            raise
+        remember_new_packages(prior, "dnf", [("brave-browser", was_installed)])
+    elif kind == "packages":
         manager = action["manager"]
         packages = action["packages"]
         existed = []
@@ -1511,6 +1664,7 @@ def do_revert():
         return
     has_system_changes = (
         any(package["manager"] == "dnf" for package in prior.get("packages", []))
+        or bool(prior.get("dnf_repositories"))
         or bool(prior.get("services"))
         or bool(prior.get("hostname"))
         or bool(prior.get("power_profile"))
@@ -1520,11 +1674,21 @@ def do_revert():
         require_root()
     for service in reversed(prior.get("services", [])):
         run(["systemctl", "disable", "--now", service])
+    plugin_packages = [
+        package for package in prior.get("packages", [])
+        if package["manager"] == "dnf" and package["name"] == "dnf-plugins-core"
+    ]
     for package in reversed(prior.get("packages", [])):
+        if package in plugin_packages:
+            continue
         if package["manager"] == "dnf":
             run(["dnf", "remove", "-y", package["name"]])
         elif package["manager"] == "flatpak":
             run(["flatpak", "uninstall", package.get("scope", "--user"), "-y", package["name"]])
+    for repository in reversed(prior.get("dnf_repositories", [])):
+        remove_owned_brave_repository(repository)
+    for package in reversed(plugin_packages):
+        run(["dnf", "remove", "-y", package["name"]])
     for remote in reversed(prior.get("flatpak_remotes", [])):
         run(["flatpak", "remote-delete", remote["scope"], "--force", remote["name"]])
     if prior.get("hostname"):

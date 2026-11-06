@@ -49,9 +49,9 @@ export const CATALOG_ITEMS = [
   { id: 'gnome-tweaks', label: 'gnome-tweaks', section: 'essential-apps', installMethod: 'dnf', command: 'sudo dnf5 install -y gnome-tweaks', revertible: true, requiresInput: null, needsVerification: false, depends_on: [], conflicts_with: [], desktops: 'gnome', supported_fedora: [], tags: ['gnome'] },
   { id: 'syncthing', label: 'syncthing', section: 'essential-apps', installMethod: 'dnf', command: 'sudo dnf5 install -y syncthing', revertible: true, requiresInput: null, needsVerification: false, depends_on: [], conflicts_with: [], desktops: 'any', supported_fedora: [], tags: ['sync'] },
   { id: 'firefox', label: 'Firefox', section: 'internet-comm', installMethod: 'dnf', command: 'sudo dnf5 install -y firefox', revertible: true, requiresInput: null, needsVerification: false, depends_on: [], conflicts_with: [], desktops: 'any', supported_fedora: [], tags: ['browser'] },
-  { id: 'google-chrome', label: 'Google Chrome', section: 'internet-comm', installMethod: 'vendor', command: '', revertible: true, requiresInput: null, needsVerification: true, depends_on: [], conflicts_with: [], desktops: 'any', supported_fedora: [], tags: ['browser'] },
+  { id: 'google-chrome', label: 'Google Chrome', section: 'internet-comm', installMethod: 'vendor', command: '', revertible: true, requiresInput: null, needsVerification: false, depends_on: [], conflicts_with: [], desktops: 'any', supported_fedora: [], tags: ['browser'] },
   { id: 'chromium', label: 'Chromium', section: 'internet-comm', installMethod: 'dnf', command: 'sudo dnf5 install -y chromium', revertible: true, requiresInput: null, needsVerification: false, depends_on: [], conflicts_with: [], desktops: 'any', supported_fedora: [], tags: ['browser'] },
-  { id: 'brave', label: 'Brave', section: 'internet-comm', installMethod: 'vendor', command: '', revertible: true, requiresInput: null, needsVerification: true, depends_on: [], conflicts_with: [], desktops: 'any', supported_fedora: [], tags: ['browser'] },
+  { id: 'brave', label: 'Brave', section: 'internet-comm', installMethod: 'repo', command: '', revertible: true, requiresInput: null, needsVerification: false, depends_on: [], conflicts_with: [], desktops: 'any', supported_fedora: [], tags: ['browser'] },
   { id: 'vivaldi', label: 'Vivaldi', section: 'internet-comm', installMethod: 'vendor', command: '', revertible: true, requiresInput: null, needsVerification: true, depends_on: [], conflicts_with: [], desktops: 'any', supported_fedora: [], tags: ['browser'] },
   { id: 'microsoft-edge', label: 'Microsoft Edge', section: 'internet-comm', installMethod: 'vendor', command: '', revertible: true, requiresInput: null, needsVerification: true, depends_on: [], conflicts_with: [], desktops: 'any', supported_fedora: [], tags: ['browser'] },
   { id: 'librewolf', label: 'LibreWolf', section: 'internet-comm', installMethod: 'flatpak', command: 'flatpak install -y flathub io.gitlab.librewolf-community', revertible: true, requiresInput: null, needsVerification: false, depends_on: [], conflicts_with: [], desktops: 'any', supported_fedora: [], tags: ['browser'] },
@@ -169,7 +169,7 @@ const CRITICAL_ITEMS = new Set([
 ]);
 const HIGH_CAUTION_ITEMS = new Set([
   'configure-dnf', 'dnf-autoupdate', 'rpmfusion-repos', 'power-settings',
-  'virtualization', 'docker', 'zsh-omz',
+  'virtualization', 'docker', 'zsh-omz', 'brave',
 ]);
 const CAUTION_ITEMS = new Set([
   'unrar', 'spotify', 'google-chrome', 'microsoft-edge', 'dropbox', 'wps-office',
@@ -201,6 +201,7 @@ const ITEM_RISK_REASONS = {
   'zsh-omz': 'Changes shell configuration; an incorrect default-shell change can impair login access.',
   'system-cleanup': "Removes DNF's cached metadata and downloaded package files only; it does not remove installed software or user data.",
   'google-chrome': 'Installs proprietary browser software subject to Google licensing and update policies.',
+  brave: 'Adds Brave’s signed third-party DNF repository and installs its browser.',
   'microsoft-edge': 'Installs proprietary browser software subject to Microsoft licensing and update policies.',
   vivaldi: 'Installs proprietary browser software subject to Vivaldi licensing and update policies.',
   opera: 'Installs proprietary browser software subject to Opera licensing and update policies.',
@@ -304,14 +305,22 @@ const INSTALLATION_INFO = {
     docs: [['Fedora OnionShare package', 'https://packages.fedoraproject.org/pkgs/onionshare/onionshare/']],
   },
   'google-chrome': {
-    source: 'Google official Linux RPM',
-    note: 'Verified vendor RPM route; download from Google and review the package before installing. Not enabled for unattended generation.',
-    docs: [['Chrome Linux requirements and download', 'https://support.google.com/chrome/a/answer/9025903?hl=en']],
+    source: 'Google official signed RPM; installed through Fedora DNF',
+    note: 'Google supports Fedora 39+ and provides x86-64 and ARM64 RPMs. Fedora has no Chrome package; DNF installs Google’s signed RPM, which configures package updates. Google documents the RPM download and GUI install, not a Fedora-specific shell command.',
+    docs: [
+      ['Fedora DNF software management', 'https://docs.fedoraproject.org/en-US/quick-docs/dnf/'],
+      ['Chrome Linux requirements and installation', 'https://support.google.com/chrome/answer/95346?hl=en'],
+      ['DNF5 install command reference', 'https://dnf5.readthedocs.io/en/latest/commands/install.8.html'],
+    ],
   },
   brave: {
-    source: 'Brave official Fedora DNF repository',
-    note: 'Fedora 41+ instructions are verified. Repository setup and trust prompts remain manual; this action does not configure a vendor repository automatically.',
-    docs: [['Brave Linux installation', 'https://brave.com/linux/']],
+    source: 'Brave official Fedora DNF5 repository; RPM signature checking enabled',
+    note: 'Uses Brave’s published Fedora 41+ DNF5 instructions and repository file with gpgcheck=1. The installer asks before adding the repository and removes its own repository file on revert.',
+    docs: [
+      ['Brave Fedora installation', 'https://brave.com/linux/'],
+      ['Brave repository configuration', 'https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo'],
+      ['DNF5 config-manager documentation', 'https://dnf5.readthedocs.io/en/latest/dnf5_plugins/config-manager.8.html'],
+    ],
   },
   vivaldi: {
     source: 'Vivaldi official RPM download',
@@ -325,8 +334,8 @@ const INSTALLATION_INFO = {
   },
   opera: {
     source: 'Opera official Linux download page',
-    note: 'Linux download is verified, but the official page did not confirm a Fedora RPM/package procedure. Do not guess a package or repository.',
-    docs: [['Opera downloads', 'https://www.opera.com/download']],
+    note: 'Opera publishes signed Linux RPMs, but no Fedora install/update instructions or supported Fedora release range were verified. A direct RPM installer is still in the works.',
+    docs: [['Opera Linux downloads', 'https://www.opera.com/download?os=linux'], ['Opera RPM feed', 'https://rpm.opera.com/rpm/']],
   },
   webappmanager: {
     source: 'Linux Mint upstream project; no Fedora/Flathub install route verified',
@@ -335,7 +344,7 @@ const INSTALLATION_INFO = {
   },
   'signal-desktop': {
     source: 'Signal official Linux AppImage',
-    note: 'Signal’s official Linux route is an AppImage with detached-signature verification; the Debian apt instructions do not apply to Fedora.',
+    note: 'Signal’s official Fedora-compatible route is a signed AppImage, not an RPM. A verified AppImage installer is still in the works; Debian apt instructions do not apply to Fedora.',
     docs: [['Signal Linux download and signature verification', 'https://signal.org/download/linux/']],
   },
   'wps-office': {
@@ -548,7 +557,7 @@ const CUSTOM_ACTION_ITEMS = new Set([
   'set-hostname', 'configure-dnf', 'dnf-autoupdate', 'flathub-replace', 'ssh',
   'firmware-update', 'rpmfusion-repos', 'multimedia-codecs', 'intel-codecs',
   'amd-codecs', 'virtualization', 'power-settings', 'nodejs-npm',
-  'flatpak-update', 'wake-on-lan', 'system-cleanup',
+  'flatpak-update', 'wake-on-lan', 'system-cleanup', 'google-chrome', 'brave',
 ]);
 for (const item of CATALOG_ITEMS) {
   if (item.id === 'system-cleanup') {
