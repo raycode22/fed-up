@@ -248,6 +248,8 @@ select, input:not([type="checkbox"]) { border: 1px solid var(--border-soft); bor
 .item-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: var(--space-2); }
 .item-row { min-width: 0; display: grid; grid-template-columns: 1.25rem 1.25rem minmax(0, 1fr); align-items: start; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--border-soft); border-radius: var(--radius-sm); background: var(--surface); box-shadow: var(--shadow-control); }
 .item-row:has(input:checked) { border-color: color-mix(in srgb, var(--accent) 58%, transparent); background: var(--selected); }
+.item-row.item-unavailable { border-style: dashed; background: color-mix(in srgb, var(--surface-raised) 65%, var(--surface)); }
+.item-row.item-unavailable .item-icon, .item-row.item-unavailable .item-title { color: var(--text-muted); }
 .item-row input { width: 1.25rem; height: 1.25rem; min-height: 0; align-self: start; margin: .125rem 0 0; accent-color: var(--accent); }
 /* Center artwork inside shared SVG viewBoxes on the first title line. */
 .item-row > .item-icon { width: 1.25rem; height: 1.25rem; margin-block-start: .25rem; color: var(--accent); transform: translateY(1.67px); }
@@ -266,6 +268,8 @@ select, input:not([type="checkbox"]) { border: 1px solid var(--border-soft); bor
 .item-input [aria-invalid="true"] { border-color: var(--critical-border); }
 .field-error { color: var(--critical-text); font-size: .875rem; }
 .badge { display: inline-block; padding: 0 var(--space-1); border-radius: var(--radius-sm); background: var(--selected); color: var(--text); font-size: .75rem; font-weight: 700; }
+.badge-work-in-progress { border: 1px solid var(--border-soft); color: var(--text-muted); background: var(--surface-raised); }
+.item-work-status { color: var(--text-muted); }
 .badge-eol { background: var(--critical-bg); color: var(--critical-text); }
 .script-panel { container-type: inline-size; position: sticky; top: calc(var(--header-height) + .5rem); min-width: 0; max-height: calc(100dvh - 4.5rem); overflow: auto; padding: var(--space-4); border: 1px solid var(--border-soft); border-radius: var(--radius-md); background: var(--surface); box-shadow: var(--shadow-card); }
 .script-panel-heading { display: flex; justify-content: space-between; align-items: start; gap: var(--space-2); }
